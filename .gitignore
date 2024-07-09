@@ -129,6 +129,11 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+ai_venv/
+.vscode/
+*.pyc
+__pycache__/
+.ipynb_checkpoints/
 
 # Spyder project settings
 .spyderproject
