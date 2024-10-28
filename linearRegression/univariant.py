@@ -60,9 +60,54 @@ num_iterations = 1000000000
 # cost = J(final_w,final_b)
 # print(f"final cost :  {cost}")
 
-x_new_us = 3200
+# x_new_us = 3200
+# x_new = (x_new_us - x_min) / (x_max - x_min)  # Scale the new input value
+# predicted_price = F(initial_w, initial_b, x_new)
+
+
+
+x_new_us = 1750 
 x_new = (x_new_us - x_min) / (x_max - x_min)  # Scale the new input value
 predicted_price = F(initial_w, initial_b, x_new)
-print(f"Predicted price for 3200 sq ft house: {predicted_price} (in thousands of dollars)")
+print(f"Predicted price for {x_new_us} sq ft house: {predicted_price} (in thousands of dollars)")
 
-#just implement the plots below here -->
+# # Plotting the real training data
+# plt.scatter(x_train_us, y_train, color='blue', label='Training Data')  # Original training data (unscaled)
+# plt.xlabel('House Area (sq ft)')
+# plt.ylabel('Price (in $1000s)')
+# plt.title('Real Training Data')
+# plt.legend()
+# plt.grid(True)
+# plt.savefig('real_training_data.png')  # Save the plot as an image
+# plt.close()  # Close the plot to free memory
+
+# # Plotting the predicted price for the new area
+# plt.scatter([x_new_us], [predicted_price], color='red', label='Predicted Price for 3200 sq ft')  # Prediction point
+# plt.xlabel('House Area (sq ft)')
+# plt.ylabel('Price (in $1000s)')
+# plt.title('Predicted Price for 3200 sq ft House')
+# plt.legend()
+# plt.grid(True)
+# plt.savefig('predicted_price_3200sqft.png')  # Save the plot as an image
+# plt.close()  # Close the plot to free memory
+
+# Plotting the real training data and predicted values together
+plt.plot(x_train_us, y_train, 'bo-', label='Training Data')  # Systematic x-axis values for training data
+
+# Generate predicted values for all training points
+y_pred_all = F(initial_w, initial_b, x_train)
+
+# Plot the predicted line
+plt.plot(x_train_us, y_pred_all, 'r-', label='Model Prediction')  # Predicted values as a line
+
+# Mark the specific prediction for 3200 sq ft
+plt.scatter([x_new_us], [predicted_price], color='green', label='Predicted Price for 3200 sq ft',zorder=5)  # Prediction point
+
+# Labels and title
+plt.xlabel('House Area (sq ft)')
+plt.ylabel('Price (in $1000s)')
+plt.title('Real vs Predicted House Prices')
+plt.legend()
+plt.grid(True)
+plt.savefig('predicted_price_3200sqft.png')  # Save the plot as an image
+plt.close()  # Close the plot to free memory
