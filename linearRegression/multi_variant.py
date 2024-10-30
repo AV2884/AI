@@ -91,11 +91,9 @@ def predict_unnormalized(x, w, b):
 
 #________________________________________________________________________________________
 w = np.zeros(num_features)  
-# w = np.array([ 0.58476456 , 0.36126702, -0.06681752, -0.09352807])
-b = 0  # Initialize bias to 0
-# b = -2.775404905897379e-17
-alpha = 0.00001  # Learning rate
-num_iterations = 1_00_00_000  # Number of epochs
+b = 0  
+alpha = 0.0001  
+num_iterations = 1_00_00_000  
 
 # Run gradient descent
 w, b = gradient_descent(y_normalized, w , b, alpha, num_iterations)
@@ -121,19 +119,20 @@ for i in range(num_samples):
          
 #size_sqft, num_bedrooms, house_age, distance_city
 # Take user inputs and convert them to float
-size_sqft = float(input("Enter size of house: "))
-num_bedrooms = int(input("Enter number of bedrooms: "))
-house_age = float(input("Enter house age: "))
-distance_city = float(input("Enter distance from city: "))
+while(True):
+    size_sqft = float(input("Enter size of house: "))
+    num_bedrooms = int(input("Enter number of bedrooms: "))
+    house_age = float(input("Enter house age: "))
+    distance_city = float(input("Enter distance from city: "))
 
-# Create a NumPy array from the inputs
-usecase = np.array([size_sqft, num_bedrooms, house_age, distance_city], dtype=float)
+    # Create a NumPy array from the inputs
+    usecase = np.array([size_sqft, num_bedrooms, house_age, distance_city], dtype=float)
 
-# Normalize the input (same normalization logic as your training data)
-usecase_normalized = (usecase - np.mean(x_train_us, axis=0)) / (np.max(x_train_us, axis=0) - np.min(x_train_us, axis=0))
+    # Normalize the input (same normalization logic as your training data)
+    usecase_normalized = (usecase - np.mean(x_train_us, axis=0)) / (np.max(x_train_us, axis=0) - np.min(x_train_us, axis=0))
 
-# Make the prediction using the normalized input
-bill = predict_unnormalized(usecase_normalized, w, b)
+    # Make the prediction using the normalized input
+    bill = predict_unnormalized(usecase_normalized, w, b)
 
-# Print the final prediction
-print(f"Your house will cost approximately ${bill:.2f}")
+    # Print the final prediction
+    print(f"Your house will cost approximately ${bill:.2f}")
