@@ -55,7 +55,7 @@ num_iterations = 1000000
 # final_w, final_b = gradient_descent(initial_w, initial_b, learning_rate, num_iterations)
 
 # print(f"Final values: w = {final_w}, b = {final_b}")
-# cost = J(final_w,final_b)
+# cost = J(final_w,final_b)x
 # print(f"final cost :  {cost}")
 #--------------------------------------------------------------------------------------
 x_new_us = 1000 
