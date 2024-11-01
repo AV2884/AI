@@ -44,7 +44,7 @@ for i in range(num_samples):
 
 #model
 def F(w, b, x):
-    return np.dot(w,x) + b
+    return np.dot(w,x**2) + b
 
 #cost function
 def cost_function(w , b):
@@ -92,7 +92,7 @@ def predict_unnormalized(x, w, b):
 #________________________________________________________________________________________
 w = np.zeros(num_features)  
 b = 0  
-alpha = 0.0001  
+alpha = 0.00001  
 num_iterations = 1_00_00_000  
 
 # Run gradient descent
