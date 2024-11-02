@@ -36,6 +36,7 @@ max_y = np.max(y_train_us[:])
 min_y = np.min(y_train_us[:])
 delta_y = max_y - min_y
 
+
 for i in range(num_samples):
     normalized_yi = (y_train_us[i] - mean_y)/delta_y
     print(f"{y_train_us[i]} - {mean_y} / {delta_y} = {normalized_yi}")
