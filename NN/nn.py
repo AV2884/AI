@@ -89,6 +89,7 @@ def compute_gradient(x, y, a1, a2, a3, W3, W2, activation_hidden):
 # Gradient descent function
 def gradient_descent(x_train, y_train, W1, b1, W2, b2, W3, b3, activation_hidden,learning_rate=0.01,num_epochs=1000):
     start_time = time.time()
+    previous_cost = None
     for i in range(num_epochs):
         
         # Forward pass
@@ -111,8 +112,15 @@ def gradient_descent(x_train, y_train, W1, b1, W2, b2, W3, b3, activation_hidden
         end_time = time.time()
         elapsed_time = end_time - start_time
 
-        if i % 100 == 0:
-            print(f"Iter: {i}, Cost: {cost}")
+        if previous_cost is not None:
+            delta_cost = previous_cost - cost
+            # delta_percentage = (delta_cost / previous_cost) * 100
+            print(f"Iter: {i}, Cost: {cost:.7f}, D:{delta_cost:.10f}, t:{elapsed_time:.2f}s")
+        else:
+            print(f"Iter: {i}, Cost: {cost:.7f}, Time: {elapsed_time:.2f}s")
+        previous_cost = cost
+        # if i % 10 == 0:
+        #     print(f"Iter: {i}, Cost: {cost}")
 
     end_time = time.time()
     training_time = end_time - start_time
@@ -141,7 +149,7 @@ def print_sample_data(rows=10, cols=10):
 
 
 
-def model_summary(W1, b1, W2, b2, W3, b3, training_time, initial_cost, final_cost, learning_rate, num_epochs, activation_hidden, init_method):
+def model_summary(W1, b1, W2, b2, W3, b3, training_time, initial_cost, final_cost, learning_rate, num_epochs, activation_hidden, init_method,accuracy):
     # Calculate total parameters
     total_parameters = (W1.size + b1.size) + (W2.size + b2.size) + (W3.size + b3.size)
     cost_reduction = ((initial_cost - final_cost) / initial_cost) * 100  # Percentage reduction
@@ -179,6 +187,7 @@ def model_summary(W1, b1, W2, b2, W3, b3, training_time, initial_cost, final_cos
     print(f"- Initial Cost Value: {initial_cost:.4f}")
     print(f"- Final Cost Value: {final_cost:.4f}")
     print(f"- Cost Reduction: {cost_reduction:.2f}%")
+    print(f"- Accuracy: {accuracy:.5f}%\n")
     print(f"- Training Time: {training_time:.2f} seconds\n")
 
     print("Weight and Bias Parameters:")
@@ -194,6 +203,15 @@ def model_summary(W1, b1, W2, b2, W3, b3, training_time, initial_cost, final_cos
     print("- Python Version:", sys.version)
     print("- NumPy Version:", np.__version__)
 
+
+def calculate_accuracy(x_train, y_train, W1, b1, W2, b2, W3, b3, activation_hidden):
+    _, _, a3 = forward_pass(x_train, W1, b1, W2, b2, W3, b3, activation_hidden, "sigmoid")
+    predictions = (a3 > 0.5).astype(int)  # Convert probabilities to binary output
+    correct_predictions = np.sum(predictions == y_train)
+    accuracy = (correct_predictions / y_train.shape[0]) * 100  # Calculate accuracy percentage
+    return accuracy
+
+
 def predict(x, W1, b1, W2, b2, W3, b3, activation_hidden):
     # Perform a forward pass with the trained weights and biases
     _, _, a3 = forward_pass(x, W1, b1, W2, b2, W3, b3, activation_hidden, "sigmoid")
@@ -207,9 +225,9 @@ def predict(x, W1, b1, W2, b2, W3, b3, activation_hidden):
 # Configuration settings
 init_method = "x"       # "x" for Xavier or "r" for random initialization
 activation = "r"        # "s" for sigmoid or "r" for ReLU
-mode = "p"              # "t" for train or "p" for predict
+mode = "i"              # "t" for train or "p" for predict
 learning_rate = 0.001
-num_epochs = 30000
+num_epochs = 10_000
 
 # Set the activation function for hidden layers
 activation_hidden = "sigmoid" if activation == "s" else "relu"
@@ -241,30 +259,31 @@ if mode == "t":
         b2 = np.zeros((1, hidden_units_2))  # Shape: (1, 15)
         b3 = np.zeros((1, output_units))    # Shape: (1, 1)
 
-        # Train the model
-        initial_cost = compute_cost(
-            y_train_filtered,
-            forward_pass(x_train_filtered, W1, b1, W2, b2, W3, b3, activation_hidden, "sigmoid")[2]
-        )
-        W1, b1, W2, b2, W3, b3, training_time = gradient_descent(
-            x_train_filtered, y_train_filtered, W1, b1, W2, b2, W3, b3, activation_hidden, learning_rate=learning_rate, num_epochs=num_epochs
-        )
-        final_cost = compute_cost(
-            y_train_filtered,
-            forward_pass(x_train_filtered, W1, b1, W2, b2, W3, b3, activation_hidden, "sigmoid")[2]
-        )
+    # Train the model
+    initial_cost = compute_cost(
+        y_train_filtered,
+        forward_pass(x_train_filtered, W1, b1, W2, b2, W3, b3, activation_hidden, "sigmoid")[2]
+    )
+    W1, b1, W2, b2, W3, b3, training_time = gradient_descent(
+        x_train_filtered, y_train_filtered, W1, b1, W2, b2, W3, b3, activation_hidden, learning_rate=learning_rate, num_epochs=num_epochs
+    )
+    final_cost = compute_cost(
+        y_train_filtered,
+        forward_pass(x_train_filtered, W1, b1, W2, b2, W3, b3, activation_hidden, "sigmoid")[2]
+    )
 
-        # Save the trained weights and biases
-        np.save("W1.npy", W1)
-        np.save("b1.npy", b1)
-        np.save("W2.npy", W2)
-        np.save("b2.npy", b2)
-        np.save("W3.npy", W3)
-        np.save("b3.npy", b3)
-        print("Saved weights and biases after training.")
+    # Save the trained weights and biases
+    np.save("W1.npy", W1)
+    np.save("b1.npy", b1)
+    np.save("W2.npy", W2)
+    np.save("b2.npy", b2)
+    np.save("W3.npy", W3)
+    np.save("b3.npy", b3)
+    print("Saved weights and biases after training.")
 
-        # Display the model summary
-        model_summary(W1, b1, W2, b2, W3, b3, training_time, initial_cost, final_cost, learning_rate, num_epochs, activation_hidden, init_method)
+    # Display the model summary
+    accuracy = calculate_accuracy(x_train_filtered, y_train_filtered, W1, b1, W2, b2, W3, b3, activation_hidden)
+    model_summary(W1, b1, W2, b2, W3, b3, training_time, initial_cost, final_cost, learning_rate, num_epochs, activation_hidden, init_method, accuracy)
 
 if mode == "p":
     print("Prediction mode selected. Making predictions...")
@@ -330,6 +349,28 @@ if mode == "p":
     display_predictions(sample_images, predictions, sample_labels)
 
 else:
+    # Load an image of the number 2 from the MNIST dataset
+    W1 = np.load("W1.npy")
+    b1 = np.load("b1.npy")
+    W2 = np.load("W2.npy")
+    b2 = np.load("b2.npy")
+    W3 = np.load("W3.npy")
+    b3 = np.load("b3.npy")
+    (_, _), (x_test, y_test) = mnist.load_data()
+    # Filter for images labeled as 2
+    number_2_images = x_test[y_test == 2]
+
+    # Take the first "2" image for testing
+    image_of_2 = number_2_images[0]
+    # Preprocess the image: normalize and flatten
+    image_of_2 = image_of_2 / 255.0
+    image_of_2 = image_of_2.flatten().reshape(1, -1)
+
+    # Make a prediction using the forward_pass function
+    _, _, prediction = forward_pass(image_of_2, W1, b1, W2, b2, W3, b3, activation_hidden, "sigmoid")
+
+    print(f"Model's output for the number '2': {prediction[0][0]:.4f}")
+
     print("No mode exists")
     pass
 
