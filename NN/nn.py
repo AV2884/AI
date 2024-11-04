@@ -24,8 +24,8 @@ b3 = np.zeros(1)
 def sigmoid(z):
     return 1 / ( 1 + np.exp(-z))
 
-#cost function
 
+#cost function
 def compute_cost(y , y_hat):
     m = y.shape[0]
     y_hat = np.clip(y_hat, 1e-10, 1 - 1e-10) #limits the values in an array to a specified range
@@ -38,34 +38,82 @@ def compute_cost(y , y_hat):
     cost = (-1 / m) * np.sum( (y * np.log(y_hat))  + (1 - y) *  np.log(1 - y_hat))
     return cost 
 
-'''simulation of a forward pass in neural network'''
 
-def forward_pass(x):
-    print(f"Input image vector :{x}")
-    x = x.flatten().reshape(1, -1)  # Flatten and reshape x to be (1, 784)
-    print(f"Input image vector flattened :{x}")
-
-    z1 = np.dot(x,W1) + b1
-    print(f"z1 = {x} * {W1} + {b1}")
-    print(f"1st z1:{z1}")
+#compute_gradient
+def compute_gradient(x, y, W1, b1, W2, b2, W3, b3):
+    # Forward pass to get activations
+    z1 = np.dot(x, W1) + b1
     a1 = sigmoid(z1)
-    print(f"1st a1 (sigmoid) :{a1}")
 
-    z2 = np.dot(a1,W2) + b2
+    z2 = np.dot(a1, W2) + b2
     a2 = sigmoid(z2)
 
-    z3 = np.dot(a2,W3) + b3
+    z3 = np.dot(a2, W3) + b3
+    a3 = sigmoid(z3)
+
+    # Compute the error at the output layer
+    error = a3 - y
+    # print("1!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",error.shape)
+
+    # Number of training examples (m)
+    m = y.shape[0]
+
+    # Gradients for W3 and b3
+    dW3 = (1 / m) * np.dot(a2.T, error)
+    db3 = (1 / m) * np.sum(error, axis=0)
+
+    # Backpropagate the error to the second hidden layer
+    dz2 = np.dot(error, W3.T) * (a2 * (1 - a2))
+    dW2 = (1 / m) * np.dot(a1.T, dz2)
+    db2 = (1 / m) * np.sum(dz2, axis=0)
+
+    # Backpropagate the error to the first hidden layer
+    dz1 = np.dot(dz2, W2.T) * (a1 * (1 - a1))
+    dW1 = (1 / m) * np.dot(x.T, dz1)
+    db1 = (1 / m) * np.sum(dz1, axis=0)
+
+    # Return all gradients
+    return dW1, db1, dW2, db2, dW3, db3
+
+
+#gradient_descent
+def gradient_descent(x_train,y_train,W1, b1, W2, b2, W3, b3):
+    learning_rate = 0.001
+    num_epochs = 1000
+    x_train = x_train.reshape(x_train.shape[0], -1)
+    y_train = y_train.reshape(-1, 1)
+
+    for i in range(num_epochs):
+        a3 = forward_pass(x_train)
+        cost = compute_cost(y_train , a3)
+        dW1, db1, dW2, db2, dW3, db3 = compute_gradient(x_train, y_train, W1, b1, W2, b2, W3, b3)
+
+        W1 = W1 - learning_rate * dW1
+        b1 = b1 - learning_rate * db1
+        W2 = W2 - learning_rate * dW2
+        b2 = b2 - learning_rate * db2
+        W3 = W3 - learning_rate * dW3
+        b3 = b3 - learning_rate * db3
+
+        if i % 100 == 0:
+            print(f"Iter: {i} , Cost: {cost}")
+
+    return W1, b1, W2, b2, W3, b3
+
+#Forward pass through the NN
+def forward_pass(x):
+    z1 = np.dot(x, W1) + b1  # (m, 784) dot (784, 25) -> (m, 25)
+    a1 = sigmoid(z1)
+
+    z2 = np.dot(a1, W2) + b2  # (m, 25) dot (25, 15) -> (m, 15)
+    a2 = sigmoid(z2)
+
+    z3 = np.dot(a2, W3) + b3  # (m, 15) dot (15, 1) -> (m, 1)
     a3 = sigmoid(z3)
 
     return a3
+    
 
-sample_image = x_train_filtered[1]  # Choose the first image (shape: 28x28)
-a1 = forward_pass(sample_image)
-print(a1)
-
-
-
-#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 def print_sample_data(rows=10,cols=10):
     fig, axes = plt.subplots(rows, cols, figsize=(10, 10))
     status = 0
@@ -83,6 +131,12 @@ def print_sample_data(rows=10,cols=10):
     print(f"Saved grid image")
 
 
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+# Make sure x_train_filtered is flattened and normalized
+x_train_filtered = x_train_filtered.reshape(x_train_filtered.shape[0], -1)  # Flatten images
+y_train_filtered = y_train_filtered.reshape(-1, 1) 
 
+# Call the gradient_descent function
+W1, b1, W2, b2, W3, b3 = gradient_descent(x_train_filtered, y_train_filtered, W1, b1, W2, b2, W3, b3)
 
 # print_sample_data(10,10)
