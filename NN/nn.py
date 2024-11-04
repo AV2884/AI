@@ -1,6 +1,9 @@
 import numpy as np
 from tensorflow.keras.datasets import mnist
+import matplotlib.pyplot as plt
 import time
+import os
+import sys
 
 '''Data'''
 (x_train, y_train), (x_set, y_set) = mnist.load_data()
@@ -83,7 +86,6 @@ def compute_gradient(x, y, a1, a2, a3, W3, W2, activation_hidden):
     return dW1, db1, dW2, db2, dW3, db3
 
 
-
 # Gradient descent function
 def gradient_descent(x_train, y_train, W1, b1, W2, b2, W3, b3, activation_hidden,learning_rate=0.01,num_epochs=1000):
     start_time = time.time()
@@ -117,70 +119,219 @@ def gradient_descent(x_train, y_train, W1, b1, W2, b2, W3, b3, activation_hidden
     return W1, b1, W2, b2, W3, b3, training_time
 
     
-
-def print_sample_data(rows=10,cols=10):
+def print_sample_data(rows=10, cols=10):
     fig, axes = plt.subplots(rows, cols, figsize=(10, 10))
-    status = 0
+    
     for i in range(rows * cols):
-        status += 1
-        if i % 100 == 0:
-            print(status)
-        axes[i // cols, i % cols].imshow(x_train_filtered[i], cmap='gray')
+        if i % 10 == 0:
+            print(f"Processing image {i}")
+        # Reshape the flattened image back to (28, 28)
+        image = x_train_filtered[i].reshape(28, 28)
+        label = y_train_filtered[i][0]  # Get the corresponding label
+        
+        axes[i // cols, i % cols].imshow(image, cmap='gray')
         axes[i // cols, i % cols].axis('off')
+        axes[i // cols, i % cols].set_title(str(label), fontsize=12)  # Larger font size
 
-    # Save the image of the grid of 100 images of 0 and 1
-    image_path_all = '/root/aiRoot/0-AI/AI/NN/mnist_all_0_and_1_samples.png'
-    plt.savefig(image_path_all, bbox_inches='tight')
+    # Save the image of the grid of images and labels
+    image_path_all = '/root/aiRoot/0-AI/AI/NN/mnist_all_0_and_1_samples_with_labels.png'
+    plt.savefig(image_path_all, bbox_inches='tight', dpi=80)  # Lower DPI
     plt.close()
-    print(f"Saved grid image")
+    print(f"Saved grid image with labels")
 
 
-def model_summary(W1, b1, W2, b2, W3, b3, training_time):
+
+def model_summary(W1, b1, W2, b2, W3, b3, training_time, initial_cost, final_cost, learning_rate, num_epochs, activation_hidden, init_method):
+    # Calculate total parameters
+    total_parameters = (W1.size + b1.size) + (W2.size + b2.size) + (W3.size + b3.size)
+    cost_reduction = ((initial_cost - final_cost) / initial_cost) * 100  # Percentage reduction
+
+    memory_usage_bytes = W1.nbytes + b1.nbytes + W2.nbytes + b2.nbytes + W3.nbytes + b3.nbytes
+
+    # Estimate memory usage for activations and gradients
+    # Assuming float64 (8 bytes per value)
+    activation_memory_bytes = (x_train_filtered.nbytes + 
+                               W1.shape[1] * x_train_filtered.shape[0] * 8 +  # a1
+                               W2.shape[1] * x_train_filtered.shape[0] * 8 +  # a2
+                               output_units * x_train_filtered.shape[0] * 8)  # a3
+
+    gradient_memory_bytes = memory_usage_bytes  # Roughly equal to weights and biases
+
+    # Total memory usage
+    total_memory_usage_bytes = memory_usage_bytes + activation_memory_bytes + gradient_memory_bytes
+    total_memory_usage_kb = total_memory_usage_bytes / 1024  # Convert to kilobytes
+    total_memory_usage_mb = total_memory_usage_kb / 1024  # Convert to megabytes
+
+
     print("\nModel Summary:")
     print(f"Number of Training Images: {num_images}")
     print(f"Number of '0' Images: {num_zeros}")
     print(f"Number of '1' Images: {num_ones}")
-    print(f"Training Time: {training_time:.2f} seconds")
-    print(f"Weight and Bias Parameters Used:")
-    print(f"  - W1: {W1.shape}, b1: {b1.shape}")
-    print(f"  - W2: {W2.shape}, b2: {b2.shape}")
-    print(f"  - W3: {W3.shape}, b3: {b3.shape}")
-    print()
+    print(f"Input Image Shape: (784,) (Flattened from 28x28)")
+    print("Normalization: Pixel values scaled to [0, 1]\n")
+
+    print("Training Configuration:")
+    print(f"- Activation Function (Hidden Layers): {activation_hidden.capitalize()}")
+    print(f"- Activation Function (Output Layer): Sigmoid")
+    print(f"- Weight Initialization: {init_method.capitalize()}")
+    print(f"- Learning Rate: {learning_rate}")
+    print(f"- Number of Epochs: {num_epochs}")
+    print(f"- Initial Cost Value: {initial_cost:.4f}")
+    print(f"- Final Cost Value: {final_cost:.4f}")
+    print(f"- Cost Reduction: {cost_reduction:.2f}%")
+    print(f"- Training Time: {training_time:.2f} seconds\n")
+
+    print("Weight and Bias Parameters:")
+    print(f"- W1: {W1.shape}, b1: {b1.shape}")
+    print(f"- W2: {W2.shape}, b2: {b2.shape}")
+    print(f"- W3: {W3.shape}, b3: {b3.shape}")
+    print(f"- Total Parameters: {total_parameters}\n")
+    print(f"- Space Used by Weights and Biases: {memory_usage_bytes / 1024:.2f} KB")
+    print(f"- Estimated Total Memory Usage During Training: {total_memory_usage_mb:.2f} MB\n")
+
+    print("Environment Details:")
+    print("- Hardware: CPU")  # Update this if you use GPU in the future
+    print("- Python Version:", sys.version)
+    print("- NumPy Version:", np.__version__)
+
+def predict(x, W1, b1, W2, b2, W3, b3, activation_hidden):
+    # Perform a forward pass with the trained weights and biases
+    _, _, a3 = forward_pass(x, W1, b1, W2, b2, W3, b3, activation_hidden, "sigmoid")
+    
+    # Use a threshold of 0.5 to make binary predictions
+    predictions = (a3 >= 0.5).astype(int)
+    return predictions
 
 
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+# Configuration settings
+init_method = "x"       # "x" for Xavier or "r" for random initialization
+activation = "r"        # "s" for sigmoid or "r" for ReLU
+mode = "p"              # "t" for train or "p" for predict
+learning_rate = 0.001
+num_epochs = 30000
 
-init_method = "x"       # "x" for xavier or "r" random
-activation = "s"        # "s" for sigmoid or "r" for relu
-mode = "t"              # "t" for train or "p" for predict
-a = 0.003
-epoch = 100
-
-if init_method == "x":
-    W1 = np.random.randn(input_units, hidden_units_1) * np.sqrt(1 / input_units)
-    W2 = np.random.randn(hidden_units_1, hidden_units_2) * np.sqrt(1 / hidden_units_1)
-    W3 = np.random.randn(hidden_units_2, output_units) * np.sqrt(1 / hidden_units_2)
-else:  # Random initialization
-    W1 = np.random.randn(input_units, hidden_units_1) * 0.01
-    W2 = np.random.randn(hidden_units_1, hidden_units_2) * 0.01
-    W3 = np.random.randn(hidden_units_2, output_units) * 0.01
-b1 = np.zeros((1, hidden_units_1))  # Shape: (1, 25)
-b2 = np.zeros((1, hidden_units_2))  # Shape: (1, 15)
-b3 = np.zeros((1, output_units)) 
-
+# Set the activation function for hidden layers
 activation_hidden = "sigmoid" if activation == "s" else "relu"
+
+# Check if saved weights and biases exist
 if mode == "t":
-        W1, b1, W2, b2, W3, b3, training_time = gradient_descent(
-            x_train_filtered, y_train_filtered, W1, b1, W2, b2, W3, b3, activation_hidden,learning_rate=a,num_epochs=epoch
+    if all(os.path.exists(file) for file in ["W1.npy", "b1.npy", "W2.npy", "b2.npy", "W3.npy", "b3.npy"]):
+        # Load weights and biases
+        W1 = np.load("W1.npy")
+        b1 = np.load("b1.npy")
+        W2 = np.load("W2.npy")
+        b2 = np.load("b2.npy")
+        W3 = np.load("W3.npy")
+        b3 = np.load("b3.npy")
+        print("Loaded saved weights and biases.")
+    else:
+        # Initialize weights and biases
+        if init_method == "x":
+            # Xavier initialization
+            W1 = np.random.randn(input_units, hidden_units_1) * np.sqrt(1 / input_units)
+            W2 = np.random.randn(hidden_units_1, hidden_units_2) * np.sqrt(1 / hidden_units_1)
+            W3 = np.random.randn(hidden_units_2, output_units) * np.sqrt(1 / hidden_units_2)
+        else:  # Random initialization
+            W1 = np.random.randn(input_units, hidden_units_1) * 0.01
+            W2 = np.random.randn(hidden_units_1, hidden_units_2) * 0.01
+            W3 = np.random.randn(hidden_units_2, output_units) * 0.01
+
+        b1 = np.zeros((1, hidden_units_1))  # Shape: (1, 25)
+        b2 = np.zeros((1, hidden_units_2))  # Shape: (1, 15)
+        b3 = np.zeros((1, output_units))    # Shape: (1, 1)
+
+        # Train the model
+        initial_cost = compute_cost(
+            y_train_filtered,
+            forward_pass(x_train_filtered, W1, b1, W2, b2, W3, b3, activation_hidden, "sigmoid")[2]
         )
-        model_summary(W1, b1, W2, b2, W3, b3, training_time)
-elif mode == "p":
-    # For prediction, you can implement a function that uses the trained weights
-    print("Prediction mode selected. Implement prediction logic here.")
+        W1, b1, W2, b2, W3, b3, training_time = gradient_descent(
+            x_train_filtered, y_train_filtered, W1, b1, W2, b2, W3, b3, activation_hidden, learning_rate=learning_rate, num_epochs=num_epochs
+        )
+        final_cost = compute_cost(
+            y_train_filtered,
+            forward_pass(x_train_filtered, W1, b1, W2, b2, W3, b3, activation_hidden, "sigmoid")[2]
+        )
+
+        # Save the trained weights and biases
+        np.save("W1.npy", W1)
+        np.save("b1.npy", b1)
+        np.save("W2.npy", W2)
+        np.save("b2.npy", b2)
+        np.save("W3.npy", W3)
+        np.save("b3.npy", b3)
+        print("Saved weights and biases after training.")
+
+        # Display the model summary
+        model_summary(W1, b1, W2, b2, W3, b3, training_time, initial_cost, final_cost, learning_rate, num_epochs, activation_hidden, init_method)
+
+if mode == "p":
+    print("Prediction mode selected. Making predictions...")
+
+    # Load saved weights and biases
+    W1 = np.load("W1.npy")
+    b1 = np.load("b1.npy")
+    W2 = np.load("W2.npy")
+    b2 = np.load("b2.npy")
+    W3 = np.load("W3.npy")
+    b3 = np.load("b3.npy")
+    print("Loaded saved weights and biases.")
+
+    # Ask the user for the range of images to predict
+    user_input = input("Enter the range of indices (e.g., '0-4' for images 0 to 4 or '0-0' for a single image): ")
+    
+    # Parse the range
+    start, end = map(int, user_input.split('-'))
+    sample_images = x_train_filtered[start:end+1]  # Select images from start to end (inclusive)
+    sample_labels = y_train_filtered[start:end+1]  # Select corresponding labels
+
+    # Forward pass for prediction
+    _, _, predictions = forward_pass(sample_images, W1, b1, W2, b2, W3, b3, activation_hidden, "sigmoid")
+    formatted_predictions = [f"{float(pred[0]):.8f}" for pred in predictions]
+
+    for i in range(len(formatted_predictions)):
+        binary_output = 1 if float(formatted_predictions[i]) > 0.5 else 0
+        print(f"PREDICTION {i} -> {formatted_predictions[i]} = {binary_output}")
+
+    predictions = (predictions > 0.5).astype(int)  # Convert probabilities to binary predictions (0 or 1)
+
+    # Display and save the predictions
+    import matplotlib.pyplot as plt
+
+    def display_predictions(sample_images, predictions, sample_labels):
+        num_samples = len(sample_images)  # Get the number of images provided
+
+        # Create a figure to display predictions
+        fig, axes = plt.subplots(1, num_samples, figsize=(3 * num_samples, 3))  # Adjust the figure size dynamically
+
+        if num_samples == 1:
+            # Handle the case for a single image
+            image = sample_images[0].reshape(28, 28)  # Reshape to 28x28 for display
+            axes.imshow(image, cmap='gray')
+            axes.axis('off')
+            axes.set_title(f"Pred: {predictions[0][0]}, True: {sample_labels[0][0]}")
+        else:
+            # Handle the case for multiple images
+            for i in range(num_samples):
+                image = sample_images[i].reshape(28, 28)  # Reshape to 28x28 for display
+                axes[i].imshow(image, cmap='gray')
+                axes[i].axis('off')
+                axes[i].set_title(f"Pred: {predictions[i][0]}, True: {sample_labels[i][0]}")
+
+        # Save the image of predictions
+        image_path_predictions = '/root/aiRoot/0-AI/AI/NN/predictions_sample.png'
+        plt.savefig(image_path_predictions, bbox_inches='tight')
+        plt.close()
+
+        print(f"Saved sample predictions image at: {image_path_predictions}")
+
+    # Call the function to display predictions
+    display_predictions(sample_images, predictions, sample_labels)
+
 else:
-    print("Invalid mode selected. Please choose 'train' or 'predict'.")
+    print("No mode exists")
+    pass
 
-
-
-
-# print_sample_data(10,10)
+# Plot sample data (if needed)
+# print_sample_data(50, 50)
