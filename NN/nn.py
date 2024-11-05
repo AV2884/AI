@@ -37,7 +37,7 @@ def activation_function(z, activation_type):
     else:
         raise ValueError("Invalid activation type. Use 'relu' or 'sigmoid'.")
 
-
+#zuma jump,cursedh3y.mp,xaura
 #cost function
 def compute_cost(y , y_hat):
     m = y.shape[0]
@@ -356,23 +356,24 @@ else:
     b2 = np.load("b2.npy")
     W3 = np.load("W3.npy")
     b3 = np.load("b3.npy")
-    (_, _), (x_test, y_test) = mnist.load_data()
-    # Filter for images labeled as 2
-    number_2_images = x_test[y_test == 2]
 
-    # Take the first "2" image for testing
-    image_of_2 = number_2_images[0]
+    # Load the MNIST test data
+    (_, _), (x_test, y_test) = mnist.load_data()
+
+    # Filter for images labeled as '8'
+    number_8_images = x_test[y_test == 8]
+
+    # Take the first "8" image for testing
+    image_of_8 = number_8_images[0]
+
     # Preprocess the image: normalize and flatten
-    image_of_2 = image_of_2 / 255.0
-    image_of_2 = image_of_2.flatten().reshape(1, -1)
+    image_of_8 = image_of_8 / 255.0
+    image_of_8 = image_of_8.flatten().reshape(1, -1)
 
     # Make a prediction using the forward_pass function
-    _, _, prediction = forward_pass(image_of_2, W1, b1, W2, b2, W3, b3, activation_hidden, "sigmoid")
+    _, _, prediction = forward_pass(image_of_8, W1, b1, W2, b2, W3, b3, activation_hidden, "sigmoid")
 
-    print(f"Model's output for the number '2': {prediction[0][0]:.4f}")
-
-    print("No mode exists")
-    pass
+    print(f"Model's output for the number '8': {prediction[0][0]:.4f}")
 
 # Plot sample data (if needed)
 # print_sample_data(50, 50)
