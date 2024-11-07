@@ -79,6 +79,34 @@ def compute_gradients(X, y, W1, W2, W3, z1, z2, a1, a2, a3):
     return dW1, db1, dW2, db2, dW3, db3
 
 
+#Perfrom gradient descent to minimize cost
+def gradient_descent(X, y, W1, b1, W2, b2, W3, b3, learning_rate=0.001, epochs=1000):
+    for i in range(epochs):
+        prevoius_cost = None
+
+        z1, a1, z2, a2, a3 = forward_pass(X, W1, b1, W2, b2, W3, b3)
+
+        cost = compute_cost(y, a3)
+
+        dW1, db1, dW2, db2, dW3, db3 = compute_gradients(X, y, W1, W2, W3, z1, z2, a1, a2, a3)
+
+        W1 -= learning_rate * dW1
+        W2 -= learning_rate * dW2
+        W3 -= learning_rate * dW3
+        b1 -= learning_rate * db1
+        b2 -= learning_rate * db2
+        b3 -= learning_rate * db3
+
+    if i % 100 == 0:
+        if prevoius_cost is not None:
+            print(f"Iter <{i}> : cost {cost:.5f} : Δcost {prevoius_cost - cost}")
+        else:
+            print(f"Iter <{i}> : cost {cost:.5f} : Δcost N/A")
+        prevoius_cost = cost
+
+
+    return W1, b1, W2, b2, W3, b3
+
 
 
 
