@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import sys
 import os
 import time
+from tqdm import tqdm
 
 '''Config'''
 #Data
@@ -17,6 +18,7 @@ hidden_units_1 = 25
 hidden_units_2 = 15
 output_units = 10
 
+image_path="/root/aiRoot/0-AI/AI/multi-classClassification/fig.png"
 
 #Activation functions
 def relu(z):
@@ -76,7 +78,7 @@ def compute_gradients(X, y, W1, W2, W3, z1, z2, a1, a2, a3):
     return dW1, db1, dW2, db2, dW3, db3
 
 #Perfrom gradient descent to minimize cost
-def gradient_descent(X, y, W1, b1, W2, b2, W3, b3, learning_rate=0.01, epochs=1000):
+# def gradient_descent(X, y, W1, b1, W2, b2, W3, b3, learning_rate=0.01, epochs=1000):
     prevoius_cost = None
     start_time = time.time()
 
@@ -109,6 +111,61 @@ def gradient_descent(X, y, W1, b1, W2, b2, W3, b3, learning_rate=0.01, epochs=10
     return W1, b1, W2, b2, W3, b3, training_time
 
 
+
+def gradient_descent(X, y, W1, b1, W2, b2, W3, b3, learning_rate=0.01, epochs=1000):
+    previous_cost = None
+    start_time = time.time()
+    iter_start_time = time.time()  # To track time per iteration
+
+    for i in tqdm(range(epochs), desc="Training Progress", position=0, leave=True):
+        z1, a1, z2, a2, a3 = forward_pass(X, W1, b1, W2, b2, W3, b3)
+        cost = compute_cost(y, a3)
+        dW1, db1, dW2, db2, dW3, db3 = compute_gradients(X, y, W1, W2, W3, z1, z2, a1, a2, a3)
+
+        W1 -= learning_rate * dW1
+        W2 -= learning_rate * dW2
+        W3 -= learning_rate * dW3
+        b1 -= learning_rate * db1
+        b2 -= learning_rate * db2
+        b3 -= learning_rate * db3
+
+        # Calculate elapsed time and estimated remaining time
+        elapsed_time = time.time() - iter_start_time
+        total_elapsed_time = time.time() - start_time
+        remaining_iters = epochs - i
+        estimated_completion_time = (total_elapsed_time / (i + 1)) * remaining_iters
+
+        # Print status
+        if i % 10 == 0:
+            if previous_cost is not None:
+                delta_cost = previous_cost - cost
+                tqdm.write(
+                    f"Iter <{i:5d}> : cost {cost:.7f} : Δcost {delta_cost: .7f} | "
+                    f"ETC: {format_time(estimated_completion_time):>8} | T: {format_time(total_elapsed_time):>8}"
+                )
+            else:
+                tqdm.write(f"Iter <{i}> : cost {cost:.7f} : Δcost N/A")
+
+            previous_cost = cost
+
+        iter_start_time = time.time()  # Reset iteration timer
+
+    end_time = time.time()
+    training_time = end_time - start_time
+    tqdm.write(f"Training completed in {training_time:.2f} seconds.")
+
+    # Save weights and biases after training
+    np.save("W1.npy", W1)
+    np.save("b1.npy", b1)
+    np.save("W2.npy", W2)
+    np.save("b2.npy", b2)
+    np.save("W3.npy", W3)
+    np.save("b3.npy", b3)
+    tqdm.write("Weights and biases saved.")
+
+    return W1, b1, W2, b2, W3, b3, training_time
+
+
 def one_hot_encode(y, num_classes=10):
     '''
     0 --> [1,0,0,0,0,0,0,0,0,0]
@@ -123,7 +180,7 @@ def one_hot_encode(y, num_classes=10):
     return one_hot
 
 
-def sample_data_image(rows=10, cols=10, image_path="/root/aiRoot/0-AI/AI/multi-classClassification/fig.png"):
+def sample_data_image(rows=10, cols=10):
     fig, axes = plt.subplots(rows,cols,figsize=(10,10))
 
     for i in range(rows * cols):
@@ -197,16 +254,21 @@ def calculate_accuracy(X, y, W1, b1, W2, b2, W3, b3):
     true_labels = np.argmax(y, axis=1)
     accuracy = np.mean(predictions == true_labels) * 100
     return accuracy
+
+
+def format_time(seconds):
+    minutes = int(seconds // 60)
+    remaining_seconds = int(seconds % 60)
+    return f"{minutes}m {remaining_seconds}s"
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 
 y_train_one_hot = one_hot_encode(y_train)  # One-hot encode y_train
-learning_rate = 0.01
-epochs = 1000
+
 
 mode = "t"          # "t" for train, "p" for predict
-learning_rate = 0.001
-num_epochs = 50_000
+learning_rate = 0.005
+num_epochs = 20_000
 
 if mode == "t":
     if all(os.path.exists(file) for file in ["W1.npy", "b1.npy", "W2.npy", "b2.npy", "W3.npy", "b3.npy"]):
@@ -254,11 +316,31 @@ elif mode == "p":
 
     user_input = input("Enter the range of indices for prediction (e.g., '0-9'): ")
     start, end = map(int, user_input.split('-'))
-    sample_images = x_test[start:end + 1]
-    sample_labels = y_test[start:end + 1]
+    sample_images = x_test[start:end + 1]  # Using test data here
+    sample_labels = y_test[start:end + 1]  # Using corresponding test labels
 
-    _, _, _, _, predictions = forward_pass(sample_images.reshape(sample_images.shape[0], -1), W1, b1, W2, b2, W3, b3)
-    predictions = np.argmax(predictions, axis=1)
-    print(f"Predictions: {predictions}")
+    _, _, _, _, softmax_outputs = forward_pass(sample_images.reshape(sample_images.shape[0], -1), W1, b1, W2, b2, W3, b3)
+    
+    predicted_labels = np.argmax(softmax_outputs, axis=1)
+
+    for i in range(len(predicted_labels)):
+        print(f"\nImage Index {start + i}")
+        print(f"True Label: {sample_labels[i]} | Predicted Label: {predicted_labels[i]}")
+        print("Softmax Probabilities:")
+        for digit, prob in enumerate(softmax_outputs[i]):
+            prob_percentage = prob * 100
+            print(f"  {digit}: {prob_percentage:.9f}% {'<-- Predicted' if digit == predicted_labels[i] else ''}")
+
+    num_samples = len(sample_images)
+    fig, axes = plt.subplots(1, num_samples, figsize=(3 * num_samples, 3))
+    for i in range(num_samples):
+        axes[i].imshow(sample_images[i], cmap='gray')
+        axes[i].axis('off')
+        axes[i].set_title(f"Pred: {predicted_labels[i]}\nTrue: {sample_labels[i]}")
+
+    plt.savefig(image_path,bbox_inches='tight', dpi=100)
+    plt.close()
+
 else:
+    sample_data_image(10,10)
     print("Invalid mode selected.")
