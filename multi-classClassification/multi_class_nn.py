@@ -104,10 +104,20 @@ def gradient_descent(X, y, W1, b1, W2, b2, W3, b3, learning_rate=0.001, epochs=1
             print(f"Iter <{i}> : cost {cost:.5f} : Δcost N/A")
         prevoius_cost = cost
 
-
     return W1, b1, W2, b2, W3, b3
 
-
+def one_hot_encode(y, num_classes=10):
+    '''
+    0 --> [1,0,0,0,0,0,0,0,0,0]
+    1 --> [0,1,0,0,0,0,0,0,0,0]
+    2 --> [0,0,1,0,0,0,0,0,0,0]
+    3 --> [0,0,0,1,0,0,0,0,0,0]
+    '''
+    y = np.array(y)  # Ensure y is a NumPy array
+    one_hot = np.zeros((len(y), num_classes))
+    for i, value in enumerate(y):
+        one_hot[i, value] = 1.0
+    return one_hot
 
 
 
