@@ -1,6 +1,7 @@
 import numpy as np
 from tensorflow.keras.datasets import mnist
 import matplotlib.pyplot as plt
+import math
 
 '''Config'''
 #Data
@@ -22,6 +23,78 @@ W1 = np.random.randn(input_units, hidden_units_1) * np.sqrt(1 / input_units)
 W2 = np.random.randn(hidden_units_1, hidden_units_2) * np.sqrt(1 / hidden_units_1)
 W3 = np.random.randn(hidden_units_2, output_units) * np.sqrt(1 / hidden_units_2)
 print("Initialization complete.")
+
+#Activation functions
+def relu(z):
+    return np.maximum(0,z)
+
+def relu_derivative(z):
+    return (z > 0).astype(float)
+
+
+def softmax(z):
+    z -= np.max(z) # Subtract the max for numerical stability (helps prevent overflow)
+    exp_z = np.exp(z)
+    a_j = exp_z / np.sum(exp_z)
+    return a_j
+
+
+#Simulate a forward pass throught the NN
+def forward_pass(X, W1, b1, W2, b2, W3, b3):
+    z1 = np.dot(X,W1) + b1
+    a1 = relu(z1)
+    z2 = np.dot(a1,W2) + b2
+    a2 = relu(z2)
+    z3 = np.dot(a2,W3) + b3
+    a3 = softmax(z3)
+    return z1, a1, z2, a2, a3
+
+
+#Loss function
+def compute_cost(y_true, y_pred):
+    m = y_train.shape[0]
+    y_pred = np.clip(y_pred, 1e-10, 1 - 1e-10)  # Avoid log(0) errors
+    cost = -np.sum(y_true * np.log(y_pred)) / m
+    return cost
+
+#Calculating the gradients
+def compute_gradients(X, y, W1, W2, W3, z1, z2, a1, a2, a3):
+    m = X.shape[0]
+
+    #Gradient for the Output Layer
+    error3 = a3 - y                                        # Shape: (m, 10) y is hot encoded
+    dW3 = (1 / m) * np.dot(a2.T, error3)                   # Shape: (15, 10)
+    db3 = (1 / m) * np.sum(error3, axis=0, keepdims=True)  # Shape: (1, 10)
+
+    #Gradients for Hidden Layer 2
+    error2 = np.dot(error3, W3.T) * relu_derivative(z2)
+    dW2 = (1 / m) * np.dot(a1.T, error2)                   # Shape: (25, 15)
+    db2 = (1 / m) * np.sum(error2, axis=0, keepdims=True)  # Shape: (1, 15)
+
+    #Gradients for Hidden Layer 1
+    error1 = np.dot(error2, W2.T) * relu_derivative(z1)    # Shape: (m, 25)
+    dW1 = (1 / m) * np.dot(X.T, error1)                    # Shape: (784, 25)
+    db1 = (1 / m) * np.sum(error1, axis=0, keepdims=True)  # Shape: (1, 25)
+
+    return dW1, db1, dW2, db2, dW3, db3
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
