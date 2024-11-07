@@ -5,6 +5,7 @@ import sys
 import os
 import time
 from tqdm import tqdm
+from PIL import Image,ImageOps
 
 '''Config'''
 #Data
@@ -260,13 +261,26 @@ def format_time(seconds):
     minutes = int(seconds // 60)
     remaining_seconds = int(seconds % 60)
     return f"{minutes}m {remaining_seconds}s"
+
+
+
+def preprocess_custom_image(image_path):
+    # Open the image
+    img = Image.open(image_path).convert('L')  # Grayscale
+    img = ImageOps.invert(img)  # Invert colors if background is white and digit is black
+    img = img.resize((28, 28), Image.LANCZOS)  # Resize to 28x28 with smoothing
+
+    # Normalize and flatten
+    img_array = np.array(img) / 255.0  # Normalize pixel values to [0, 1]
+    img_array = img_array.reshape(1, -1)  # Flatten for model input
+    return img_array
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 
 y_train_one_hot = one_hot_encode(y_train)  # One-hot encode y_train
 
 
-mode = "t"          # "t" for train, "p" for predict
+mode = "b"          # "t" for train, "p" for predict
 learning_rate = 0.005
 num_epochs = 20_000
 
@@ -318,7 +332,6 @@ elif mode == "p":
     start, end = map(int, user_input.split('-'))
     sample_images = x_test[start:end + 1]  # Using test data here
     sample_labels = y_test[start:end + 1]  # Using corresponding test labels
-
     _, _, _, _, softmax_outputs = forward_pass(sample_images.reshape(sample_images.shape[0], -1), W1, b1, W2, b2, W3, b3)
     
     predicted_labels = np.argmax(softmax_outputs, axis=1)
@@ -342,5 +355,23 @@ elif mode == "p":
     plt.close()
 
 else:
-    sample_data_image(10,10)
-    print("Invalid mode selected.")
+    # sample_data_image(10,10)
+    # print("Invalid mode selected.")
+    image_path = '/root/aiRoot/0-AI/AI/multi-classClassification/test-8.png'
+    W1 = np.load("W1.npy")
+    b1 = np.load("b1.npy")
+    W2 = np.load("W2.npy")
+    b2 = np.load("b2.npy")
+    W3 = np.load("W3.npy")
+    b3 = np.load("b3.npy")
+
+    # Predict using the model
+    processed_img = preprocess_custom_image(image_path)
+    _, _, _, _, predictions = forward_pass(processed_img, W1, b1, W2, b2, W3, b3)
+
+    # Display results
+    predicted_digit = np.argmax(predictions)
+    predictions = predictions.tolist()
+    print(f"Predicted Digit: {predicted_digit}")
+    for i in range(len(predictions)):
+        print(f"Prediction softmax {i} --> {predictions[i]*100}")
