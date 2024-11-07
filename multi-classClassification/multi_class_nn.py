@@ -1,7 +1,9 @@
 import numpy as np
 from tensorflow.keras.datasets import mnist
 import matplotlib.pyplot as plt
-import math
+import sys
+import os
+import time
 
 '''Config'''
 #Data
@@ -14,15 +16,7 @@ input_units = x_train.shape[1]
 hidden_units_1 = 25
 hidden_units_2 = 15
 output_units = 10
-#Count_images
-#initialize weight and biases(Xaveir method)
-b1 = np.zeros((1, hidden_units_1))  # (1, 25)
-b2 = np.zeros((1, hidden_units_2))  # (1, 15)
-b3 = np.zeros((1, output_units))    # (1, 10)
-W1 = np.random.randn(input_units, hidden_units_1) * np.sqrt(1 / input_units)
-W2 = np.random.randn(hidden_units_1, hidden_units_2) * np.sqrt(1 / hidden_units_1)
-W3 = np.random.randn(hidden_units_2, output_units) * np.sqrt(1 / hidden_units_2)
-print("Initialization complete.")
+
 
 #Activation functions
 def relu(z):
@@ -30,7 +24,6 @@ def relu(z):
 
 def relu_derivative(z):
     return (z > 0).astype(float)
-
 
 def softmax(z):
     # z -= np.max(z) # Subtract the max for numerical stability (helps prevent overflow)
@@ -43,84 +36,49 @@ def softmax(z):
 
 
 #Simulate a forward pass throught the NN
-# def forward_pass(X, W1, b1, W2, b2, W3, b3):
-#     z1 = np.dot(X,W1) + b1
-#     a1 = relu(z1)
-#     z2 = np.dot(a1,W2) + b2
-#     a2 = relu(z2)
-#     z3 = np.dot(a2,W3) + b3
-#     a3 = softmax(z3)
-#     return z1, a1, z2, a2, a3
 def forward_pass(X, W1, b1, W2, b2, W3, b3):
-    z1 = np.dot(X, W1) + b1  # Shape: (m, hidden_units_1)
+    z1 = np.dot(X,W1) + b1
     a1 = relu(z1)
-
-    z2 = np.dot(a1, W2) + b2  # Shape: (m, hidden_units_2)
+    z2 = np.dot(a1,W2) + b2
     a2 = relu(z2)
-
-    z3 = np.dot(a2, W3) + b3  # Shape: (m, output_units)
+    z3 = np.dot(a2,W3) + b3
     a3 = softmax(z3)
-    
     return z1, a1, z2, a2, a3
 
 
 #Loss function
-# def compute_cost(y_true, y_pred):
-#     m = y_train.shape[0]
-#     y_pred = np.clip(y_pred, 1e-10, 1 - 1e-10)  # Avoid log(0) errors
-#     cost = -np.sum(y_true * np.log(y_pred)) / m
-#     return cost
 def compute_cost(y_true, y_pred):
-    m = y_true.shape[0]
-    y_pred = np.clip(y_pred, 1e-10, 1 - 1e-10)  # Stability
-    return -np.sum(np.sum(y_true * np.log(y_pred), axis=1)) / m  # Row-wise summation
+    m = y_train.shape[0]
+    y_pred = np.clip(y_pred, 1e-10, 1 - 1e-10)  # Avoid log(0) errors
+    # cost = -np.sum(y_true * np.log(y_pred)) / m <--- too slow
+    return -np.sum(np.sum(y_true * np.log(y_pred), axis=1)) / m 
 
 
 #Calculating the gradients
-# def compute_gradients(X, y, W1, W2, W3, z1, z2, a1, a2, a3):
-#     m = X.shape[0]
-
-#     #Gradient for the Output Layer
-#     error3 = a3 - y                                        # Shape: (m, 10) y is hot encoded
-#     dW3 = (1 / m) * np.dot(a2.T, error3)                   # Shape: (15, 10)
-#     db3 = (1 / m) * np.sum(error3, axis=0, keepdims=True)  # Shape: (1, 10)
-
-#     #Gradients for Hidden Layer 2
-#     error2 = np.dot(error3, W3.T) * relu_derivative(z2)
-#     dW2 = (1 / m) * np.dot(a1.T, error2)                   # Shape: (25, 15)
-#     db2 = (1 / m) * np.sum(error2, axis=0, keepdims=True)  # Shape: (1, 15)
-
-#     #Gradients for Hidden Layer 1
-#     error1 = np.dot(error2, W2.T) * relu_derivative(z1)    # Shape: (m, 25)
-#     dW1 = (1 / m) * np.dot(X.T, error1)                    # Shape: (784, 25)
-#     db1 = (1 / m) * np.sum(error1, axis=0, keepdims=True)  # Shape: (1, 25)
-
-#     return dW1, db1, dW2, db2, dW3, db3
 def compute_gradients(X, y, W1, W2, W3, z1, z2, a1, a2, a3):
     m = X.shape[0]
 
-    # Gradient for Output Layer
-    error3 = a3 - y
-    dW3 = np.dot(a2.T, error3) / m
-    db3 = np.sum(error3, axis=0, keepdims=True) / m
+    #Gradient for the Output Layer
+    error3 = a3 - y                                        # Shape: (m, 10) y is hot encoded
+    dW3 = (1 / m) * np.dot(a2.T, error3)                   # Shape: (15, 10)
+    db3 = (1 / m) * np.sum(error3, axis=0, keepdims=True)  # Shape: (1, 10)
 
-    # Gradient for Hidden Layer 2
+    #Gradients for Hidden Layer 2
     error2 = np.dot(error3, W3.T) * relu_derivative(z2)
-    dW2 = np.dot(a1.T, error2) / m
-    db2 = np.sum(error2, axis=0, keepdims=True) / m
+    dW2 = (1 / m) * np.dot(a1.T, error2)                   # Shape: (25, 15)
+    db2 = (1 / m) * np.sum(error2, axis=0, keepdims=True)  # Shape: (1, 15)
 
-    # Gradient for Hidden Layer 1
-    error1 = np.dot(error2, W2.T) * relu_derivative(z1)
-    dW1 = np.dot(X.T, error1) / m
-    db1 = np.sum(error1, axis=0, keepdims=True) / m
+    #Gradients for Hidden Layer 1
+    error1 = np.dot(error2, W2.T) * relu_derivative(z1)    # Shape: (m, 25)
+    dW1 = (1 / m) * np.dot(X.T, error1)                    # Shape: (784, 25)
+    db1 = (1 / m) * np.sum(error1, axis=0, keepdims=True)  # Shape: (1, 25)
 
     return dW1, db1, dW2, db2, dW3, db3
-
-
 
 #Perfrom gradient descent to minimize cost
 def gradient_descent(X, y, W1, b1, W2, b2, W3, b3, learning_rate=0.01, epochs=1000):
     prevoius_cost = None
+    start_time = time.time()
 
     for i in range(epochs):
     
@@ -137,14 +95,19 @@ def gradient_descent(X, y, W1, b1, W2, b2, W3, b3, learning_rate=0.01, epochs=10
         b2 -= learning_rate * db2
         b3 -= learning_rate * db3
 
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+
         if i % 10 == 0:
             if prevoius_cost is not None:
-                print(f"Iter <{i}> : cost {cost:.5f} : Δcost {prevoius_cost - cost}")
+                print(f"Iter <{i}> : cost {cost:.7f} : Δcost {(prevoius_cost - cost):.7f} : {elapsed_time:.2f}s")
             else:
-                print(f"Iter <{i}> : cost {cost:.5f} : Δcost N/A")
+                print(f"Iter <{i}> : cost {cost:.7f} : Δcost N/A")
             prevoius_cost = cost
+    end_time = time.time()
+    training_time = end_time - start_time
+    return W1, b1, W2, b2, W3, b3, training_time
 
-    return W1, b1, W2, b2, W3, b3
 
 def one_hot_encode(y, num_classes=10):
     '''
@@ -177,13 +140,125 @@ def sample_data_image(rows=10, cols=10, image_path="/root/aiRoot/0-AI/AI/multi-c
     plt.close()
     print("save images")
 
+
+def model_summary(W1, b1, W2, b2, W3, b3, training_time, initial_cost, final_cost, learning_rate, num_epochs, activation_hidden, init_method, accuracy, x_train, y_train):
+    # Calculate total parameters
+    total_parameters = (W1.size + b1.size) + (W2.size + b2.size) + (W3.size + b3.size)
+    cost_reduction = ((initial_cost - final_cost) / initial_cost) * 100  # Percentage reduction
+
+    # Memory usage calculation
+    memory_usage_bytes = W1.nbytes + b1.nbytes + W2.nbytes + b2.nbytes + W3.nbytes + b3.nbytes
+    activation_memory_bytes = (x_train.nbytes +
+                               W1.shape[1] * x_train.shape[0] * 8 +  # a1
+                               W2.shape[1] * x_train.shape[0] * 8 +  # a2
+                               output_units * x_train.shape[0] * 8)  # a3
+    gradient_memory_bytes = memory_usage_bytes  # Roughly equal to weights and biases
+    total_memory_usage_bytes = memory_usage_bytes + activation_memory_bytes + gradient_memory_bytes
+    total_memory_usage_mb = total_memory_usage_bytes / (1024 ** 2)  # Convert to MB
+
+    # Count images for each label
+    unique, counts = np.unique(np.argmax(y_train, axis=1), return_counts=True)
+    label_counts = dict(zip(unique, counts))
+
+    print("\nModel Summary:")
+    print(f"- Total Training Samples: {x_train.shape[0]}")
+    for label, count in label_counts.items():
+        print(f"- Number of '{label}' Images: {count}")
+
+    print(f"\nTraining Configuration:")
+    print(f"- Activation Function (Hidden Layers): {activation_hidden.capitalize()}")
+    print(f"- Activation Function (Output Layer): Softmax")
+    print(f"- Weight Initialization: {init_method.capitalize()}")
+    print(f"- Learning Rate: {learning_rate}")
+    print(f"- Number of Epochs: {num_epochs}")
+    print(f"- Initial Cost Value: {initial_cost:.4f}")
+    print(f"- Final Cost Value: {final_cost:.4f}")
+    print(f"- Cost Reduction: {cost_reduction:.2f}%")
+    print(f"- Accuracy: {accuracy:.5f}%")
+    print(f"- Training Time: {training_time:.2f} seconds\n")
+
+    print("Weight and Bias Parameters:")
+    print(f"- W1: {W1.shape}, b1: {b1.shape}")
+    print(f"- W2: {W2.shape}, b2: {b2.shape}")
+    print(f"- W3: {W3.shape}, b3: {b3.shape}")
+    print(f"- Total Parameters: {total_parameters}")
+    print(f"- Space Used by Weights and Biases: {memory_usage_bytes / 1024:.2f} KB")
+    print(f"- Estimated Total Memory Usage During Training: {total_memory_usage_mb:.2f} MB\n")
+
+    print("Environment Details:")
+    print("- Hardware: CPU")  # Update this if GPU is not used
+    print("- Python Version:", sys.version)
+    print("- NumPy Version:", np.__version__)
+
+
+def calculate_accuracy(X, y, W1, b1, W2, b2, W3, b3):
+    _, _, _, _, a3 = forward_pass(X, W1, b1, W2, b2, W3, b3)
+    predictions = np.argmax(a3, axis=1)
+    true_labels = np.argmax(y, axis=1)
+    accuracy = np.mean(predictions == true_labels) * 100
+    return accuracy
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-y_train_encoded = one_hot_encode(y_train)  # One-hot encode y_train
-# W1, b1, W2, b2, W3, b3, costs = gradient_descent(
-#     x_train, y_train_encoded, W1, b1, W2, b2, W3, b3, learning_rate=0.001, epochs=1000
-# )
 
-import cProfile
-cProfile.run('gradient_descent(x_train, y_train_encoded, W1, b1, W2, b2, W3, b3)')
+y_train_one_hot = one_hot_encode(y_train)  # One-hot encode y_train
+learning_rate = 0.01
+epochs = 1000
 
+mode = "t"          # "t" for train, "p" for predict
+learning_rate = 0.001
+num_epochs = 50_000
+
+if mode == "t":
+    if all(os.path.exists(file) for file in ["W1.npy", "b1.npy", "W2.npy", "b2.npy", "W3.npy", "b3.npy"]):
+        W1 = np.load("W1.npy")
+        b1 = np.load("b1.npy")
+        W2 = np.load("W2.npy")
+        b2 = np.load("b2.npy")
+        W3 = np.load("W3.npy")
+        b3 = np.load("b3.npy")
+        print("Loaded saved weights and biases ready to continue.")
+    else:
+        W1 = np.random.randn(input_units, hidden_units_1) * np.sqrt(1 / input_units)
+        W2 = np.random.randn(hidden_units_1, hidden_units_2) * np.sqrt(1 / hidden_units_1)
+        W3 = np.random.randn(hidden_units_2, output_units) * np.sqrt(1 / hidden_units_2)
+        b1 = np.zeros((1, hidden_units_1))
+        b2 = np.zeros((1, hidden_units_2))
+        b3 = np.zeros((1, output_units))
+        print("Initialization complete ready to train.")
+
+    initial_cost = compute_cost(one_hot_encode(y_train), forward_pass(x_train, W1, b1, W2, b2, W3, b3)[-1])
+    W1, b1, W2, b2, W3, b3, training_time = gradient_descent(x_train, one_hot_encode(y_train), W1, b1, W2, b2, W3, b3, learning_rate, num_epochs)
+    final_cost = compute_cost(one_hot_encode(y_train), forward_pass(x_train, W1, b1, W2, b2, W3, b3)[-1])
+
+    np.save("W1.npy", W1)
+    np.save("b1.npy", b1)
+    np.save("W2.npy", W2)
+    np.save("b2.npy", b2)
+    np.save("W3.npy", W3)
+    np.save("b3.npy", b3)
+
+    accuracy = calculate_accuracy(x_train, one_hot_encode(y_train), W1, b1, W2, b2, W3, b3)
+    activation_hidden="ReLu"
+    init_method="Xavier"
+    model_summary(W1, b1, W2, b2, W3, b3, training_time, initial_cost, final_cost, learning_rate, num_epochs, activation_hidden, init_method, accuracy, x_train, one_hot_encode(y_train))
+
+
+elif mode == "p":
+    W1 = np.load("W1.npy")
+    b1 = np.load("b1.npy")
+    W2 = np.load("W2.npy")
+    b2 = np.load("b2.npy")
+    W3 = np.load("W3.npy")
+    b3 = np.load("b3.npy")
+    print("Loaded saved weights and biases.")
+
+    user_input = input("Enter the range of indices for prediction (e.g., '0-9'): ")
+    start, end = map(int, user_input.split('-'))
+    sample_images = x_test[start:end + 1]
+    sample_labels = y_test[start:end + 1]
+
+    _, _, _, _, predictions = forward_pass(sample_images.reshape(sample_images.shape[0], -1), W1, b1, W2, b2, W3, b3)
+    predictions = np.argmax(predictions, axis=1)
+    print(f"Predictions: {predictions}")
+else:
+    print("Invalid mode selected.")
