@@ -80,47 +80,20 @@ def compute_gradients(X, y, W1, W2, W3, z1, z2, a1, a2, a3):
 
 #Perfrom gradient descent to minimize cost
 # def gradient_descent(X, y, W1, b1, W2, b2, W3, b3, learning_rate=0.01, epochs=1000):
-    prevoius_cost = None
-    start_time = time.time()
-
-    for i in range(epochs):
-    
-        z1, a1, z2, a2, a3 = forward_pass(X, W1, b1, W2, b2, W3, b3)
-
-        cost = compute_cost(y, a3)
-
-        dW1, db1, dW2, db2, dW3, db3 = compute_gradients(X, y, W1, W2, W3, z1, z2, a1, a2, a3)
-
-        W1 -= learning_rate * dW1
-        W2 -= learning_rate * dW2
-        W3 -= learning_rate * dW3
-        b1 -= learning_rate * db1
-        b2 -= learning_rate * db2
-        b3 -= learning_rate * db3
-
-        end_time = time.time()
-        elapsed_time = end_time - start_time
-
-        if i % 10 == 0:
-            if prevoius_cost is not None:
-                print(f"Iter <{i}> : cost {cost:.7f} : Δcost {(prevoius_cost - cost):.7f} : {elapsed_time:.2f}s")
-            else:
-                print(f"Iter <{i}> : cost {cost:.7f} : Δcost N/A")
-            prevoius_cost = cost
-    end_time = time.time()
-    training_time = end_time - start_time
-    return W1, b1, W2, b2, W3, b3, training_time
-
-
-
-def gradient_descent(X, y, W1, b1, W2, b2, W3, b3, learning_rate=0.01, epochs=1000):
+    save_folder = "checkpoints"
+    os.makedirs(save_folder, exist_ok=True)
     previous_cost = None
+    image_path_cost = "/root/aiRoot/0-AI/AI/multi-classClassification/checkpoints"
+    save_interval = 500
     start_time = time.time()
     iter_start_time = time.time()  # To track time per iteration
+
+    costs = []
 
     for i in tqdm(range(epochs), desc="Training Progress", position=0, leave=True):
         z1, a1, z2, a2, a3 = forward_pass(X, W1, b1, W2, b2, W3, b3)
         cost = compute_cost(y, a3)
+        costs.append(cost)
         dW1, db1, dW2, db2, dW3, db3 = compute_gradients(X, y, W1, W2, W3, z1, z2, a1, a2, a3)
 
         W1 -= learning_rate * dW1
@@ -148,6 +121,19 @@ def gradient_descent(X, y, W1, b1, W2, b2, W3, b3, learning_rate=0.01, epochs=10
                 tqdm.write(f"Iter <{i}> : cost {cost:.7f} : Δcost N/A")
 
             previous_cost = cost
+        if (i + 1) % save_interval == 0:
+            np.save(os.path.join(save_folder, f"W1_iter{i+1}.npy"), W1)
+            np.save(os.path.join(save_folder, f"b1_iter{i+1}.npy"), b1)
+            np.save(os.path.join(save_folder, f"W2_iter{i+1}.npy"), W2)
+            np.save(os.path.join(save_folder, f"b2_iter{i+1}.npy"), b2)
+            np.save(os.path.join(save_folder, f"W3_iter{i+1}.npy"), W3)
+            np.save(os.path.join(save_folder, f"b3_iter{i+1}.npy"), b3)
+            tqdm.write(f"Weights and biases saved at iteration {i+1}.")
+
+        if i % 100 == 0:
+            costs.append(cost)
+
+        iter_start_time = time.time()
 
         iter_start_time = time.time()  # Reset iteration timer
 
@@ -164,7 +150,96 @@ def gradient_descent(X, y, W1, b1, W2, b2, W3, b3, learning_rate=0.01, epochs=10
     np.save("b3.npy", b3)
     tqdm.write("Weights and biases saved.")
 
+    plt.plot(range(0, epochs, 100), costs)
+    plt.xlabel('Iterations')
+    plt.ylabel('Cost')
+    plt.title('Cost Function Over Iterations')
+    plt.savefig(image_path_cost,bbox_inches='tight', dpi=100)
+    plt.close()
+
     return W1, b1, W2, b2, W3, b3, training_time
+def gradient_descent(X, y, W1, b1, W2, b2, W3, b3, learning_rate=0.01, epochs=1000):
+    save_folder = "checkpoints"
+    os.makedirs(save_folder, exist_ok=True)
+    previous_cost = None
+    image_path_cost = "/root/aiRoot/0-AI/AI/multi-classClassification/checkpoints/cost_plot.png"
+    save_interval = 500
+    start_time = time.time()
+    iter_start_time = time.time()  # To track time per iteration
+
+    costs = []  # To store costs for plotting every 100 iterations
+
+    for i in tqdm(range(epochs), desc="Training Progress", position=0, leave=True):
+        z1, a1, z2, a2, a3 = forward_pass(X, W1, b1, W2, b2, W3, b3)
+        cost = compute_cost(y, a3)
+
+        # Collect costs every 100 iterations for plotting
+        if i % 100 == 0:
+            costs.append(cost)
+
+        dW1, db1, dW2, db2, dW3, db3 = compute_gradients(X, y, W1, W2, W3, z1, z2, a1, a2, a3)
+
+        W1 -= learning_rate * dW1
+        W2 -= learning_rate * dW2
+        W3 -= learning_rate * dW3
+        b1 -= learning_rate * db1
+        b2 -= learning_rate * db2
+        b3 -= learning_rate * db3
+
+        # Calculate elapsed time and estimated remaining time
+        total_elapsed_time = time.time() - start_time
+        remaining_iters = epochs - (i + 1)  # Remaining iterations
+        avg_time_per_iter = total_elapsed_time / (i + 1)
+        estimated_completion_time = remaining_iters * avg_time_per_iter
+
+        # Print status
+        if i % 10 == 0:
+            if previous_cost is not None:
+                delta_cost = previous_cost - cost
+                tqdm.write(
+                    f"Iter <{i:5d}> : cost {cost:.7f} : Δcost {delta_cost: .7f} | "
+                    f"ETC: {format_time(estimated_completion_time):>8} | T: {format_time(total_elapsed_time):>8}"
+                )
+            else:
+                tqdm.write(f"Iter <{i}> : cost {cost:.7f} : Δcost N/A | T: {format_time(total_elapsed_time):>8}")
+
+            previous_cost = cost
+
+        # Save weights and biases every 500 iterations
+        if (i + 1) % save_interval == 0:
+            np.save(os.path.join(save_folder, f"W1_iter{i+1}.npy"), W1)
+            np.save(os.path.join(save_folder, f"b1_iter{i+1}.npy"), b1)
+            np.save(os.path.join(save_folder, f"W2_iter{i+1}.npy"), W2)
+            np.save(os.path.join(save_folder, f"W2_iter{i+1}.npy"), b2)
+            np.save(os.path.join(save_folder, f"W3_iter{i+1}.npy"), W3)
+            np.save(os.path.join(save_folder, f"b3_iter{i+1}.npy"), b3)
+            tqdm.write(f"Weights and biases saved at iteration {i+1}.")
+
+        iter_start_time = time.time()  # Reset iteration timer
+
+    end_time = time.time()
+    training_time = end_time - start_time
+    tqdm.write(f"Training completed in {training_time:.2f} seconds.")
+
+    # Save final weights and biases after training
+    np.save("W1.npy", W1)
+    np.save("b1.npy", b1)
+    np.save("W2.npy", W2)
+    np.save("b2.npy", b2)
+    np.save("W3.npy", W3)
+    np.save("b3.npy", b3)
+    tqdm.write("Final weights and biases saved.")
+
+    # Plot cost
+    plt.plot(range(0, epochs, 100), costs)
+    plt.xlabel('Iterations')
+    plt.ylabel('Cost')
+    plt.title('Cost Function Over Iterations (Every 100 Iterations)')
+    plt.savefig(image_path_cost, bbox_inches='tight', dpi=100)
+    plt.close()
+
+    return W1, b1, W2, b2, W3, b3, training_time
+
 
 
 def one_hot_encode(y, num_classes=10):
@@ -280,9 +355,10 @@ def preprocess_custom_image(image_path):
 y_train_one_hot = one_hot_encode(y_train)  # One-hot encode y_train
 
 
-mode = "b"          # "t" for train, "p" for predict
-learning_rate = 0.005
-num_epochs = 20_000
+mode = "t"          # "t" for train, "p" for predict
+learning_rate = 0.009
+num_epochs = 10_000
+
 
 if mode == "t":
     if all(os.path.exists(file) for file in ["W1.npy", "b1.npy", "W2.npy", "b2.npy", "W3.npy", "b3.npy"]):
