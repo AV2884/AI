@@ -356,8 +356,8 @@ y_train_one_hot = one_hot_encode(y_train)  # One-hot encode y_train
 
 
 mode = "t"          # "t" for train, "p" for predict
-learning_rate = 0.009
-num_epochs = 10_000
+learning_rate = 0.01
+num_epochs = 9000
 
 
 if mode == "t":
@@ -381,7 +381,7 @@ if mode == "t":
     initial_cost = compute_cost(one_hot_encode(y_train), forward_pass(x_train, W1, b1, W2, b2, W3, b3)[-1])
     W1, b1, W2, b2, W3, b3, training_time = gradient_descent(x_train, one_hot_encode(y_train), W1, b1, W2, b2, W3, b3, learning_rate, num_epochs)
     final_cost = compute_cost(one_hot_encode(y_train), forward_pass(x_train, W1, b1, W2, b2, W3, b3)[-1])
-
+    training_time = format_time(training_time)
     np.save("W1.npy", W1)
     np.save("b1.npy", b1)
     np.save("W2.npy", W2)
