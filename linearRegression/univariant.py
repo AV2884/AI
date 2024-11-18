@@ -46,8 +46,8 @@ def gradient_descent(w ,b, alpha, num_iters):
     return w , b
 
 # Test compute_gradient with some initial values
-initial_w = 1272.4309201554588
-initial_b = 224.04991993731397
+initial_w = 1272.4309201554588 #Pretrained w
+initial_b = 224.04991993731397 #Pretrained b
 learning_rate = 0.0001
 num_iterations = 1000000
 
