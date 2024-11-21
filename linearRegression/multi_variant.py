@@ -1,9 +1,10 @@
 import numpy as np
 from pprint import pprint
 
-#size_sqft, num_bedrooms, house_age, distance_city
 num_features = 4
 num_samples = 10
+
+#size_sqft, num_bedrooms, house_age, distance_city
 x_train_us = np.array([
     [850, 2, 12, 8.5], 
     [1250, 3, 5, 2.0],
@@ -15,6 +16,9 @@ x_train_us = np.array([
     [950, 2, 7, 12.0],
     [3000, 5, 1, 2.5],
     [2700, 4, 3, 3.8]
+])
+x_train_us = np.array([
+    28403
 ])
 y_train_us = np.array([30000, 50000, 62000, 31000, 80000, 55000, 42000, 32000, 95000, 88000])
 #Normalizing the data
@@ -45,7 +49,7 @@ for i in range(num_samples):
 
 #model
 def F(w, b, x):
-    return np.dot(w,x**2) + b
+    return np.dot(w,x) + b
 
 #cost function
 def cost_function(w , b):
@@ -90,7 +94,7 @@ def predict_unnormalized(x, w, b):
     unnormalized_prediction = normalized_prediction * delta_y + mean_y
     return unnormalized_prediction
 
-#________________________________________________________________________________________
+#TRAINING:________________________________________________________________________________________
 w = np.zeros(num_features)  
 b = 0  
 alpha = 0.00001  
@@ -102,38 +106,21 @@ w, b = gradient_descent(y_normalized, w , b, alpha, num_iterations)
 # Print final weights and bias
 print("Final weights:", w)
 print("Final bias:", b)
-#________________________________________________________________________________________
 
+#PREDICTIONS:________________________________________________________________________________________
+size_sqft = float(input("Enter size of house: "))
+num_bedrooms = int(input("Enter number of bedrooms: "))
+house_age = float(input("Enter house age: "))
+distance_city = float(input("Enter distance from city: "))
 
-for i in range(num_samples):
-    # Get the original (non-normalized) input values for the sample
-    area, bedrooms, house_age, distance = x_train_us[i]
+# Create a NumPy array from the inputs
+usecase = np.array([size_sqft, num_bedrooms, house_age, distance_city], dtype=float)
 
-    # Predict the price for the normalized input
-    prediction = predict_unnormalized(x_normalized[i], w, b)
+# Normalize the input (same normalization logic as your training data)
+usecase_normalized = (usecase - np.mean(x_train_us, axis=0)) / (np.max(x_train_us, axis=0) - np.min(x_train_us, axis=0))
 
-    # Print the input criteria along with the predicted and actual prices
-    print(f"Sample {i+1}:")
-    print(f"  Area: {area} sqft, Bedrooms: {bedrooms}, Age: {house_age} years, Distance from city: {distance} km")
-    print(f"  Predicted Price: ${prediction:.2f}, Actual Price: ${y_train_us[i]}")
-    print("-" * 50)  # Separator for readability
-         
-#size_sqft, num_bedrooms, house_age, distance_city
-# Take user inputs and convert them to float
-while(True):
-    size_sqft = float(input("Enter size of house: "))
-    num_bedrooms = int(input("Enter number of bedrooms: "))
-    house_age = float(input("Enter house age: "))
-    distance_city = float(input("Enter distance from city: "))
+# Make the prediction using the normalized input
+bill = predict_unnormalized(usecase_normalized, w, b)
 
-    # Create a NumPy array from the inputs
-    usecase = np.array([size_sqft, num_bedrooms, house_age, distance_city], dtype=float)
-
-    # Normalize the input (same normalization logic as your training data)
-    usecase_normalized = (usecase - np.mean(x_train_us, axis=0)) / (np.max(x_train_us, axis=0) - np.min(x_train_us, axis=0))
-
-    # Make the prediction using the normalized input
-    bill = predict_unnormalized(usecase_normalized, w, b)
-
-    # Print the final prediction
-    print(f"Your house will cost approximately ${bill:.2f}")
+# Print the final prediction
+print(f"Your house will cost approximately ${bill:.2f}")
