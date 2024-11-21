@@ -5,26 +5,22 @@ import time
 import os
 import sys
 
-#Load data
-(x_train, y_train), (x_set, y_set) = mnist.load_data()
-filter_train = (y_train == 0) | (y_train == 1)
-x_train_filtered, y_train_filtered = x_train[filter_train], y_train[filter_train]
-
-# Normalize the images and flatten them
-x_train_filtered = x_train_filtered / 255.0
-x_train_filtered = x_train_filtered.reshape(x_train_filtered.shape[0], -1)  # Flatten images
-y_train_filtered = y_train_filtered.reshape(-1, 1)
-
-# Define the number of units per layer
 input_units = x_train_filtered.shape[1]  # 784
 hidden_units_1 = 25
 hidden_units_2 = 15
 output_units = 1
-
 # Count the number of images for each class
 num_images = x_train_filtered.shape[0]
 num_zeros = np.sum(y_train_filtered == 0)
 num_ones = np.sum(y_train_filtered == 1)
+
+def load_data():
+    (x_train, y_train), (_, _) = mnist.load_data()
+    filter_train = (y_train == 0) | (y_train == 1)
+    x_train_filtered = x_train[filter_train] / 255.0  # Normalize to [0, 1]
+    y_train_filtered = y_train[filter_train].reshape(-1, 1)
+    x_train_filtered = x_train_filtered.reshape(x_train_filtered.shape[0], -1)  # Flatten images
+    return x_train_filtered, y_train_filtered
 
 # Activation functions choice
 def sigmoid(z):
@@ -47,7 +43,6 @@ def compute_cost(y , y_hat):
     cost = (-1 / m) * np.sum( (y * np.log(y_hat))  + (1 - y) *  np.log(1 - y_hat))
     return cost 
 
-
 #Forward pass through the NN
 def forward_pass(x, W1, b1, W2, b2, W3, b3, activation_hidden, activation_output):
     z1 = np.dot(x, W1) + b1
@@ -57,7 +52,6 @@ def forward_pass(x, W1, b1, W2, b2, W3, b3, activation_hidden, activation_output
     z3 = np.dot(a2, W3) + b3
     a3 = activation_function(z3, activation_output)
     return a1, a2, a3
-
 
 #Computing the gradient 
 def compute_gradient(x, y, a1, a2, a3, W3, W2, activation_hidden):
@@ -85,7 +79,6 @@ def compute_gradient(x, y, a1, a2, a3, W3, W2, activation_hidden):
     db1 = (1 / m) * np.sum(dz1, axis=0, keepdims=True)
 
     return dW1, db1, dW2, db2, dW3, db3
-
 
 # Gradient descent function
 def gradient_descent(x_train, y_train, W1, b1, W2, b2, W3, b3, activation_hidden,learning_rate=0.01,num_epochs=1000):
@@ -221,160 +214,161 @@ def predict(x, W1, b1, W2, b2, W3, b3, activation_hidden):
     return predictions
 
 
-def display_predictions(sample_images, predictions, sample_labels):
-    num_samples = len(sample_images)  # Get the number of images provided
-
-    # Create a figure to display predictions
-    fig, axes = plt.subplots(1, num_samples, figsize=(3 * num_samples, 3))  # Adjust the figure size dynamically
-
-    if num_samples == 1:
-        # Handle the case for a single image
-        image = sample_images[0].reshape(28, 28)  # Reshape to 28x28 for display
-        axes.imshow(image, cmap='gray')
-        axes.axis('off')
-        axes.set_title(f"Pred: {predictions[0][0]}, True: {sample_labels[0][0]}")
-    else:
-        # Handle the case for multiple images
-        for i in range(num_samples):
-            image = sample_images[i].reshape(28, 28)  # Reshape to 28x28 for display
-            axes[i].imshow(image, cmap='gray')
-            axes[i].axis('off')
-            axes[i].set_title(f"Pred: {predictions[i][0]}, True: {sample_labels[i][0]}")
-            # Save the image of predictions
-
-    image_path_predictions = '/root/aiRoot/0-AI/AI/binaryClassification/data/predictions_sample.png'
-    plt.savefig(image_path_predictions, bbox_inches='tight')
-    plt.close()
-
-    print(f"Saved sample predictions image at: {image_path_predictions}")
-
-
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-# Configuration settings
-init_method = "x"       # "x" for Xavier or "r" for random initialization
-activation = "r"        # "s" for sigmoid or "r" for ReLU
-mode = "t"              # "t" for train or "p" for predict
-learning_rate = 0.001
-num_epochs = 10
+if __name__ == "__main__":
 
-# Set the activation function for hidden layers
-activation_hidden = "sigmoid" if activation == "s" else "relu"
+    # Configuration settings
+    init_method = "x"       # "x" for Xavier or "r" for random initialization
+    activation = "r"        # "s" for sigmoid or "r" for ReLU
+    mode = "i"              # "t" for train or "p" for predict
+    learning_rate = 0.001
+    num_epochs = 10_000
 
-# Check if saved weights and biases exist
-if mode == "t":
-    weights_and_biases = ["models/W1.npy", "models/b1.npy", "models/W2.npy", "models/b2.npy", "models/W3.npy", "models/b3.npy"]
-    if all(os.path.exists(file) for file in weights_and_biases):
-        # Load weights and biases
-        W1 = np.load("models/W1.npy")
-        b1 = np.load("models/b1.npy")
-        W2 = np.load("models/W2.npy")
-        b2 = np.load("models/b2.npy")
-        W3 = np.load("models/W3.npy")
-        b3 = np.load("models/b3.npy")
+    # Set the activation function for hidden layers
+    activation_hidden = "sigmoid" if activation == "s" else "relu"
+
+    # Check if saved weights and biases exist
+    if mode == "t":
+        if all(os.path.exists(file) for file in ["W1.npy", "b1.npy", "W2.npy", "b2.npy", "W3.npy", "b3.npy"]):
+            # Load weights and biases
+            W1 = np.load("W1.npy")
+            b1 = np.load("b1.npy")
+            W2 = np.load("W2.npy")
+            b2 = np.load("b2.npy")
+            W3 = np.load("W3.npy")
+            b3 = np.load("b3.npy")
+            print("Loaded saved weights and biases.")
+        else:
+            # Initialize weights and biases
+            if init_method == "x":
+                # Xavier initialization
+                W1 = np.random.randn(input_units, hidden_units_1) * np.sqrt(1 / input_units)
+                W2 = np.random.randn(hidden_units_1, hidden_units_2) * np.sqrt(1 / hidden_units_1)
+                W3 = np.random.randn(hidden_units_2, output_units) * np.sqrt(1 / hidden_units_2)
+            else:  # Random initialization
+                W1 = np.random.randn(input_units, hidden_units_1) * 0.01
+                W2 = np.random.randn(hidden_units_1, hidden_units_2) * 0.01
+                W3 = np.random.randn(hidden_units_2, output_units) * 0.01
+
+            b1 = np.zeros((1, hidden_units_1))  # Shape: (1, 25)
+            b2 = np.zeros((1, hidden_units_2))  # Shape: (1, 15)
+            b3 = np.zeros((1, output_units))    # Shape: (1, 1)
+
+        # Train the model
+        initial_cost = compute_cost(
+            y_train_filtered,
+            forward_pass(x_train_filtered, W1, b1, W2, b2, W3, b3, activation_hidden, "sigmoid")[2]
+        )
+        W1, b1, W2, b2, W3, b3, training_time = gradient_descent(
+            x_train_filtered, y_train_filtered, W1, b1, W2, b2, W3, b3, activation_hidden, learning_rate=learning_rate, num_epochs=num_epochs
+        )
+        final_cost = compute_cost(
+            y_train_filtered,
+            forward_pass(x_train_filtered, W1, b1, W2, b2, W3, b3, activation_hidden, "sigmoid")[2]
+        )
+
+        # Save the trained weights and biases
+        np.save("W1.npy", W1)
+        np.save("b1.npy", b1)
+        np.save("W2.npy", W2)
+        np.save("b2.npy", b2)
+        np.save("W3.npy", W3)
+        np.save("b3.npy", b3)
+        print("Saved weights and biases after training.")
+
+        # Display the model summary
+        accuracy = calculate_accuracy(x_train_filtered, y_train_filtered, W1, b1, W2, b2, W3, b3, activation_hidden)
+        model_summary(W1, b1, W2, b2, W3, b3, training_time, initial_cost, final_cost, learning_rate, num_epochs, activation_hidden, init_method, accuracy)
+
+    if mode == "p":
+        print("Prediction mode selected. Making predictions...")
+
+        # Load saved weights and biases
+        W1 = np.load("W1.npy")
+        b1 = np.load("b1.npy")
+        W2 = np.load("W2.npy")
+        b2 = np.load("b2.npy")
+        W3 = np.load("W3.npy")
+        b3 = np.load("b3.npy")
         print("Loaded saved weights and biases.")
+
+        # Ask the user for the range of images to predict
+        user_input = input("Enter the range of indices (e.g., '0-4' for images 0 to 4 or '0-0' for a single image): ")
+        
+        # Parse the range
+        start, end = map(int, user_input.split('-'))
+        sample_images = x_train_filtered[start:end+1]  # Select images from start to end (inclusive)
+        sample_labels = y_train_filtered[start:end+1]  # Select corresponding labels
+
+        # Forward pass for prediction
+        _, _, predictions = forward_pass(sample_images, W1, b1, W2, b2, W3, b3, activation_hidden, "sigmoid")
+        formatted_predictions = [f"{float(pred[0]):.8f}" for pred in predictions]
+
+        for i in range(len(formatted_predictions)):
+            binary_output = 1 if float(formatted_predictions[i]) > 0.5 else 0
+            print(f"PREDICTION {i} -> {formatted_predictions[i]} = {binary_output}")
+
+        predictions = (predictions > 0.5).astype(int)  # Convert probabilities to binary predictions (0 or 1)
+
+        # Display and save the predictions
+        import matplotlib.pyplot as plt
+
+        def display_predictions(sample_images, predictions, sample_labels):
+            num_samples = len(sample_images)  # Get the number of images provided
+
+            # Create a figure to display predictions
+            fig, axes = plt.subplots(1, num_samples, figsize=(3 * num_samples, 3))  # Adjust the figure size dynamically
+
+            if num_samples == 1:
+                # Handle the case for a single image
+                image = sample_images[0].reshape(28, 28)  # Reshape to 28x28 for display
+                axes.imshow(image, cmap='gray')
+                axes.axis('off')
+                axes.set_title(f"Pred: {predictions[0][0]}, True: {sample_labels[0][0]}")
+            else:
+                # Handle the case for multiple images
+                for i in range(num_samples):
+                    image = sample_images[i].reshape(28, 28)  # Reshape to 28x28 for display
+                    axes[i].imshow(image, cmap='gray')
+                    axes[i].axis('off')
+                    axes[i].set_title(f"Pred: {predictions[i][0]}, True: {sample_labels[i][0]}")
+
+            # Save the image of predictions
+            image_path_predictions = '/root/aiRoot/0-AI/AI/NN/predictions_sample.png'
+            plt.savefig(image_path_predictions, bbox_inches='tight')
+            plt.close()
+
+            print(f"Saved sample predictions image at: {image_path_predictions}")
+
+        # Call the function to display predictions
+        display_predictions(sample_images, predictions, sample_labels)
+
     else:
-        print("No saved model found")
-        print("Initializing W and B")
-        # Initialize weights and biases
-        if init_method == "x":
-            # Xavier initialization
-            W1 = np.random.randn(input_units, hidden_units_1) * np.sqrt(1 / input_units)
-            W2 = np.random.randn(hidden_units_1, hidden_units_2) * np.sqrt(1 / hidden_units_1)
-            W3 = np.random.randn(hidden_units_2, output_units) * np.sqrt(1 / hidden_units_2)
-        else:  # Random initialization
-            W1 = np.random.randn(input_units, hidden_units_1) * 0.01
-            W2 = np.random.randn(hidden_units_1, hidden_units_2) * 0.01
-            W3 = np.random.randn(hidden_units_2, output_units) * 0.01
+        # Load an image of the number 2 from the MNIST dataset
+        W1 = np.load("W1.npy")
+        b1 = np.load("b1.npy")
+        W2 = np.load("W2.npy")
+        b2 = np.load("b2.npy")
+        W3 = np.load("W3.npy")
+        b3 = np.load("b3.npy")
 
-        b1 = np.zeros((1, hidden_units_1))  # Shape: (1, 25)
-        b2 = np.zeros((1, hidden_units_2))  # Shape: (1, 15)
-        b3 = np.zeros((1, output_units))    # Shape: (1, 1)
+        # Load the MNIST test data
+        (_, _), (x_test, y_test) = mnist.load_data()
 
-    # Train the model
-    initial_cost = compute_cost(
-        y_train_filtered,
-        forward_pass(x_train_filtered, W1, b1, W2, b2, W3, b3, activation_hidden, "sigmoid")[2]
-    )
-    W1, b1, W2, b2, W3, b3, training_time = gradient_descent(
-        x_train_filtered, y_train_filtered, W1, b1, W2, b2, W3, b3, activation_hidden, learning_rate=learning_rate, num_epochs=num_epochs
-    )
-    final_cost = compute_cost(
-        y_train_filtered,
-        forward_pass(x_train_filtered, W1, b1, W2, b2, W3, b3, activation_hidden, "sigmoid")[2]
-    )
+        # Filter for images labeled as '8'
+        number_8_images = x_test[y_test == 8]
 
-    # Save the trained weights and biases
-    np.save("models/W1.npy", W1)
-    np.save("models/b1.npy", b1)
-    np.save("models/W2.npy", W2)
-    np.save("models/b2.npy", b2)
-    np.save("models/W3.npy", W3)
-    np.save("models/b3.npy", b3)
-    print("Saved weights and biases after training.")
+        # Take the first "8" image for testing
+        image_of_8 = number_8_images[0]
 
-    # Display the model summary
-    accuracy = calculate_accuracy(x_train_filtered, y_train_filtered, W1, b1, W2, b2, W3, b3, activation_hidden)
-    model_summary(W1, b1, W2, b2, W3, b3, training_time, initial_cost, final_cost, learning_rate, num_epochs, activation_hidden, init_method, accuracy)
+        # Preprocess the image: normalize and flatten
+        image_of_8 = image_of_8 / 255.0
+        image_of_8 = image_of_8.flatten().reshape(1, -1)
 
-if mode == "p":
-    print("Prediction mode selected. Making predictions...")
+        # Make a prediction using the forward_pass function
+        _, _, prediction = forward_pass(image_of_8, W1, b1, W2, b2, W3, b3, activation_hidden, "sigmoid")
 
-    # Load saved weights and biases
-    W1 = np.load("models/W1.npy")
-    b1 = np.load("models/b1.npy")
-    W2 = np.load("models/W2.npy")
-    b2 = np.load("models/b2.npy")
-    W3 = np.load("models/W3.npy")
-    b3 = np.load("models/b3.npy")
-    print("Loaded saved weights and biases.")
+        print(f"Model's output for the number '8': {prediction[0][0]:.4f}")
 
-    # Ask the user for the range of images to predict
-    user_input = input("Enter the range of indices (e.g., '0-4' for images 0 to 4 or '0-0' for a single image): ")
-    
-    # Parse the range
-    start, end = map(int, user_input.split('-'))
-    sample_images = x_train_filtered[start:end+1]  # Select images from start to end (inclusive)
-    sample_labels = y_train_filtered[start:end+1]  # Select corresponding labels
-
-    # Forward pass for prediction
-    _, _, predictions = forward_pass(sample_images, W1, b1, W2, b2, W3, b3, activation_hidden, "sigmoid")
-    formatted_predictions = [f"{float(pred[0]):.8f}" for pred in predictions]
-
-    for i in range(len(formatted_predictions)):
-        binary_output = 1 if float(formatted_predictions[i]) > 0.5 else 0
-        print(f"PREDICTION {i} -> {formatted_predictions[i]} = {binary_output}")
-
-    predictions = (predictions > 0.5).astype(int)  # Convert probabilities to binary predictions (0 or 1)
-
-    # Call the function to display predictions
-    display_predictions(sample_images, predictions, sample_labels)
-
-else:
-    # Load an image of the number 2 from the MNIST dataset
-    W1 = np.load("models/W1.npy")
-    b1 = np.load("models/b1.npy")
-    W2 = np.load("models/W2.npy")
-    b2 = np.load("models/b2.npy")
-    W3 = np.load("models/W3.npy")
-    b3 = np.load("models/b3.npy")
-
-    # Load the MNIST test data
-    (_, _), (x_test, y_test) = mnist.load_data()
-
-    # Filter for images labeled as '8'
-    number_8_images = x_test[y_test == 8]
-
-    # Take the first "8" image for testing
-    image_of_8 = number_8_images[0]
-
-    # Preprocess the image: normalize and flatten
-    image_of_8 = image_of_8 / 255.0
-    image_of_8 = image_of_8.flatten().reshape(1, -1)
-
-    # Make a prediction using the forward_pass function
-    _, _, prediction = forward_pass(image_of_8, W1, b1, W2, b2, W3, b3, activation_hidden, "sigmoid")
-
-    print(f"Model's output for the number '8': {prediction[0][0]:.4f}")
-
-# Plot sample data (if needed)
-# print_sample_data(50, 50)
+    # Plot sample data (if needed)
+    # print_sample_data(50, 50)
