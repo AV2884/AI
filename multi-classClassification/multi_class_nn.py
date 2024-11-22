@@ -19,7 +19,7 @@ hidden_units_1 = 25
 hidden_units_2 = 15
 output_units = 10
 
-image_path="/root/aiRoot/0-AI/AI/multi-classClassification/fig.png"
+image_path="/root/aiRoot/0-AI/AI/multi-classClassification/data/fig.png"
 
 #Activation functions
 def relu(z):
@@ -222,12 +222,12 @@ def gradient_descent(X, y, W1, b1, W2, b2, W3, b3, learning_rate=0.01, epochs=10
     tqdm.write(f"Training completed in {training_time:.2f} seconds.")
 
     # Save final weights and biases after training
-    np.save("W1.npy", W1)
-    np.save("b1.npy", b1)
-    np.save("W2.npy", W2)
-    np.save("b2.npy", b2)
-    np.save("W3.npy", W3)
-    np.save("b3.npy", b3)
+    np.save("models/W1.npy", W1)
+    np.save("models/b1.npy", b1)
+    np.save("models/W2.npy", W2)
+    np.save("models/b2.npy", b2)
+    np.save("models/W3.npy", W3)
+    np.save("models/b3.npy", b3)
     tqdm.write("Final weights and biases saved.")
 
     # Plot cost
@@ -308,7 +308,7 @@ def model_summary(W1, b1, W2, b2, W3, b3, training_time, initial_cost, final_cos
     print(f"- Final Cost Value: {final_cost:.4f}")
     print(f"- Cost Reduction: {cost_reduction:.2f}%")
     print(f"- Accuracy: {accuracy:.5f}%")
-    print(f"- Training Time: {training_time:.2f} seconds\n")
+    print(f"- Training Time: {training_time} \n")
 
     print("Weight and Bias Parameters:")
     print(f"- W1: {W1.shape}, b1: {b1.shape}")
@@ -338,7 +338,6 @@ def format_time(seconds):
     return f"{minutes}m {remaining_seconds}s"
 
 
-
 def preprocess_custom_image(image_path):
     # Open the image
     img = Image.open(image_path).convert('L')  # Grayscale
@@ -351,23 +350,23 @@ def preprocess_custom_image(image_path):
     return img_array
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-
+weights_and_biases = ["models/W1.npy", "models/b1.npy", "models/W2.npy", "models/b2.npy", "models/W3.npy", "models/b3.npy"]
 y_train_one_hot = one_hot_encode(y_train)  # One-hot encode y_train
 
 
 mode = "t"          # "t" for train, "p" for predict
 learning_rate = 0.001
-num_epochs = 10000
+num_epochs = 100
 
 
 if mode == "t":
-    if all(os.path.exists(file) for file in ["W1.npy", "b1.npy", "W2.npy", "b2.npy", "W3.npy", "b3.npy"]):
-        W1 = np.load("W1.npy")
-        b1 = np.load("b1.npy")
-        W2 = np.load("W2.npy")
-        b2 = np.load("b2.npy")
-        W3 = np.load("W3.npy")
-        b3 = np.load("b3.npy")
+    if all(os.path.exists(file) for file in weights_and_biases):
+        W1 = np.load("models/W1.npy")
+        b1 = np.load("models/b1.npy")
+        W2 = np.load("models/W2.npy")
+        b2 = np.load("models/b2.npy")
+        W3 = np.load("models/W3.npy")
+        b3 = np.load("models/b3.npy")
         print("Loaded saved weights and biases ready to continue.")
     else:
         W1 = np.random.randn(input_units, hidden_units_1) * np.sqrt(1 / input_units)
@@ -382,12 +381,12 @@ if mode == "t":
     W1, b1, W2, b2, W3, b3, training_time = gradient_descent(x_train, one_hot_encode(y_train), W1, b1, W2, b2, W3, b3, learning_rate, num_epochs)
     final_cost = compute_cost(one_hot_encode(y_train), forward_pass(x_train, W1, b1, W2, b2, W3, b3)[-1])
     training_time = format_time(training_time)
-    np.save("W1.npy", W1)
-    np.save("b1.npy", b1)
-    np.save("W2.npy", W2)
-    np.save("b2.npy", b2)
-    np.save("W3.npy", W3)
-    np.save("b3.npy", b3)
+    np.save("models/W1.npy", W1)
+    np.save("models/b1.npy", b1)
+    np.save("models/W2.npy", W2)
+    np.save("models/b2.npy", b2)
+    np.save("models/W3.npy", W3)
+    np.save("models/b3.npy", b3)
 
     accuracy = calculate_accuracy(x_train, one_hot_encode(y_train), W1, b1, W2, b2, W3, b3)
     activation_hidden="ReLu"
@@ -396,12 +395,12 @@ if mode == "t":
 
 
 elif mode == "p":
-    W1 = np.load("W1.npy")
-    b1 = np.load("b1.npy")
-    W2 = np.load("W2.npy")
-    b2 = np.load("b2.npy")
-    W3 = np.load("W3.npy")
-    b3 = np.load("b3.npy")
+    W1 = np.load("models/W1.npy")
+    b1 = np.load("models/b1.npy")
+    W2 = np.load("models/W2.npy")
+    b2 = np.load("models/b2.npy")
+    W3 = np.load("models/W3.npy")
+    b3 = np.load("models/b3.npy")
     print("Loaded saved weights and biases.")
 
     user_input = input("Enter the range of indices for prediction (e.g., '0-9'): ")
@@ -434,12 +433,12 @@ else:
     # sample_data_image(10,10)
     # print("Invalid mode selected.")
     image_path = '/root/aiRoot/0-AI/AI/multi-classClassification/test-8.png'
-    W1 = np.load("W1.npy")
-    b1 = np.load("b1.npy")
-    W2 = np.load("W2.npy")
-    b2 = np.load("b2.npy")
-    W3 = np.load("W3.npy")
-    b3 = np.load("b3.npy")
+    W1 = np.load("models/W1.npy")
+    b1 = np.load("models/b1.npy")
+    W2 = np.load("models/W2.npy")
+    b2 = np.load("models/b2.npy")
+    W3 = np.load("models/W3.npy")
+    b3 = np.load("models/b3.npy")
 
     # Predict using the model
     processed_img = preprocess_custom_image(image_path)
