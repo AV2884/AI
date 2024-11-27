@@ -356,7 +356,7 @@ y_train_one_hot = one_hot_encode(y_train)  # One-hot encode y_train
 
 mode = "t"          # "t" for train, "p" for predict
 learning_rate = 0.001
-num_epochs = 100
+num_epochs = 1000
 
 
 if mode == "t":
