@@ -89,6 +89,7 @@ def compute_gradient(x, y, a1, a2, a3, W3, W2, activation_hidden):
 
 # Gradient descent function
 def gradient_descent(x_train, y_train, W1, b1, W2, b2, W3, b3, activation_hidden,learning_rate=0.01,num_epochs=1000):
+    costs = []
     start_time = time.time()
     previous_cost = None
     for i in range(num_epochs):
@@ -98,6 +99,7 @@ def gradient_descent(x_train, y_train, W1, b1, W2, b2, W3, b3, activation_hidden
 
         # Compute cost
         cost = compute_cost(y_train, a3)
+        costs.append(cost)
 
         # Compute gradients
         dW1, db1, dW2, db2, dW3, db3 = compute_gradient(x_train, y_train, a1, a2, a3, W3, W2, activation_hidden)
@@ -125,7 +127,7 @@ def gradient_descent(x_train, y_train, W1, b1, W2, b2, W3, b3, activation_hidden
 
     end_time = time.time()
     training_time = end_time - start_time
-    return W1, b1, W2, b2, W3, b3, training_time
+    return W1, b1, W2, b2, W3, b3, training_time, costs
 
     
 def print_sample_data(rows=10, cols=10):
@@ -255,7 +257,7 @@ init_method = "x"       # "x" for Xavier or "r" for random initialization
 activation = "r"        # "s" for sigmoid or "r" for ReLU
 mode = "t"              # "t" for train or "p" for predict
 learning_rate = 0.001
-num_epochs = 10
+num_epochs = 2000
 
 # Set the activation function for hidden layers
 activation_hidden = "sigmoid" if activation == "s" else "relu"
@@ -295,13 +297,22 @@ if mode == "t":
         y_train_filtered,
         forward_pass(x_train_filtered, W1, b1, W2, b2, W3, b3, activation_hidden, "sigmoid")[2]
     )
-    W1, b1, W2, b2, W3, b3, training_time = gradient_descent(
+    W1, b1, W2, b2, W3, b3, training_time,costs = gradient_descent(
         x_train_filtered, y_train_filtered, W1, b1, W2, b2, W3, b3, activation_hidden, learning_rate=learning_rate, num_epochs=num_epochs
     )
     final_cost = compute_cost(
         y_train_filtered,
         forward_pass(x_train_filtered, W1, b1, W2, b2, W3, b3, activation_hidden, "sigmoid")[2]
     )
+
+    iterations = range(1, len(costs) + 1)
+    plt.plot(iterations, costs, label="Cost")
+    plt.title("Cost vs. Iterations")
+    plt.xlabel("Iterations")
+    plt.ylabel("Cost")
+    plt.grid(True, linestyle="--", alpha=0.7)
+    plt.legend()
+    plt.savefig("cost_iter-graph.png", bbox_inches='tight',dpi=800)
 
     # Save the trained weights and biases
     np.save("models/W1.npy", W1)
