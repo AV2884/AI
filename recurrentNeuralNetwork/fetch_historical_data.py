@@ -50,7 +50,7 @@ def save_to_csv(df,intrument_token):
 
 if __name__ == "__main__":
 #------------------------------------------------
-    DAYS = 730
+    DAYS = 200
     INTERVEL = "minute"
     instrument_to_fetch = NFT
 #------------------------------------------------

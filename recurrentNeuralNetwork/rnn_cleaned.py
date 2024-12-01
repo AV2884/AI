@@ -117,23 +117,65 @@ def backpropagation_stacked(y_pred, y_true, hidden_states, X, params, learning_r
     return params
 
 
+# def train_rnn_stacked(X_train, y_train, params, learning_rate, epochs, save_graphs=False):
+#     start_time = time.time()
+#     losses = []
+
+#     for epoch in range(epochs):
+#         total_loss = 0
+#         for X, y in tqdm(zip(X_train, y_train), total=len(X_train), desc=f"Epoch {epoch + 1}/{epochs}"):
+#             y_pred, hidden_states = forward_pass_stacked(X, params)
+#             loss = compute_loss(y_pred, int(y))
+#             total_loss += loss
+#             params = backpropagation_stacked(y_pred, int(y), hidden_states, X, params, learning_rate)
+
+#         avg_loss = total_loss / len(X_train)
+#         losses.append(avg_loss)
+
+#         tqdm.write(f"Epoch {epoch + 1}/{epochs}, Loss: {avg_loss:.7f}, "
+#            f"ETA: {int(((time.time() - start_time) / (epoch + 1)) * (epochs - (epoch + 1)) // 60)}m "
+#            f"{int(((time.time() - start_time) / (epoch + 1)) * (epochs - (epoch + 1)) % 60)}s")
+
+
+#     if save_graphs:
+#         plt.plot(range(1, epochs + 1), losses, label="Loss over epochs")
+#         plt.xlabel("Epochs")
+#         plt.ylabel("Loss")
+#         plt.title("Training Loss")
+#         plt.legend()
+#         plt.savefig("training_loss.png")
+#         print("Training loss graph saved as 'training_loss.png'.")
+
+#     return params
 def train_rnn_stacked(X_train, y_train, params, learning_rate, epochs, save_graphs=False):
     start_time = time.time()
     losses = []
 
-    for epoch in range(epochs):
-        total_loss = 0
-        for X, y in tqdm(zip(X_train, y_train), total=len(X_train), desc=f"Epoch {epoch + 1}/{epochs}"):
-            y_pred, hidden_states = forward_pass_stacked(X, params)
-            loss = compute_loss(y_pred, int(y))
-            total_loss += loss
-            params = backpropagation_stacked(y_pred, int(y), hidden_states, X, params, learning_rate)
+    # Outer progress bar for the entire training
+    with tqdm(total=epochs, desc="Training Progress", dynamic_ncols=True, leave=True) as training_pbar:
+        for epoch in range(epochs):
+            total_loss = 0
 
-        avg_loss = total_loss / len(X_train)
-        losses.append(avg_loss)
+            # Inner progress bar for each epoch
+            with tqdm(total=len(X_train), desc=f"Epoch {epoch + 1}/{epochs}", dynamic_ncols=True, leave=False) as epoch_pbar:
+                for X, y in zip(X_train, y_train):
+                    y_pred, hidden_states = forward_pass_stacked(X, params)
+                    loss = compute_loss(y_pred, int(y))
+                    total_loss += loss
+                    params = backpropagation_stacked(y_pred, int(y), hidden_states, X, params, learning_rate)
+                    epoch_pbar.update(1)  # Update inner progress bar
 
-        tqdm.write(f"Epoch {epoch + 1}/{epochs}, Loss: {avg_loss:.7f}, "
-                   f"ETA: {((time.time() - start_time) / (epoch + 1)) * (epochs - (epoch + 1)):.2f}s")
+            avg_loss = total_loss / len(X_train)
+            losses.append(avg_loss)
+
+            # Calculate ETA for the entire training
+            elapsed_time = time.time() - start_time
+            eta = (elapsed_time / (epoch + 1)) * (epochs - (epoch + 1))
+            minutes = int(eta // 60)
+            seconds = int(eta % 60)
+
+            tqdm.write(f"Epoch {epoch + 1}/{epochs}, Loss: {avg_loss:.7f}, ETA: {minutes}m {seconds}s")
+            training_pbar.update(1)  # Update outer progress bar
 
     if save_graphs:
         plt.plot(range(1, epochs + 1), losses, label="Loss over epochs")
@@ -170,7 +212,7 @@ def load_model(file_path="model.pkl"):
 
 
 if __name__ == "__main__":
-    mode = "p"
+    mode = "t"
     save_graphs = "y"
 
     if mode == "t":
@@ -181,8 +223,8 @@ if __name__ == "__main__":
         hidden_size1 = 32
         hidden_size2 = 16
         output_size = 3
-        learning_rate = 0.01
-        epochs = 10
+        learning_rate = 0.001
+        epochs = 500
 
         params = load_model() or initialize_parameters(input_size, hidden_size1, hidden_size2, output_size)
         params = train_rnn_stacked(X_train, y_train, params, learning_rate, epochs, save_graphs)
