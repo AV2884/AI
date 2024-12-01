@@ -223,7 +223,7 @@ if __name__ == "__main__":
         hidden_size1 = 32
         hidden_size2 = 16
         output_size = 3
-        learning_rate = 0.001
+        learning_rate = 0.0001
         epochs = 500
 
         params = load_model() or initialize_parameters(input_size, hidden_size1, hidden_size2, output_size)
