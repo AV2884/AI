@@ -52,10 +52,14 @@ def generate_labels(df, threshold=0.5):
     return df.iloc[1:]
 
 def create_sequences(df, sequence_length, target_column):
+    """
+    Adjusted to include one additional derived feature ('range') to match the expected 7 features.
+    """
+    df["range"] = df["high"] - df["low"]  # New derived feature
     inputs, outputs = [], []
     for i in range(len(df) - sequence_length):
         inputs.append(
-            df.iloc[i:i + sequence_length][["open", "high", "low", "close", "hour", "day_of_week"]].values
+            df.iloc[i:i + sequence_length][["open", "high", "low", "close", "hour", "day_of_week", "range"]].values
         )
         outputs.append(df.iloc[i + sequence_length][target_column])
     return np.array(inputs), np.array(outputs)
@@ -66,12 +70,21 @@ def preprocess_latest_data():
     raw_data["hour"] = raw_data["date"].dt.hour
     raw_data["day_of_week"] = raw_data["date"].dt.dayofweek
     raw_data = raw_data.drop(columns=["date", "volume"])
-    normalized_data = normalize_data(raw_data, ["open", "high", "low", "close"])
-    labeled_data = generate_labels(normalized_data, threshold=0.5)
-    X_test, y_test = create_sequences(labeled_data, sequence_length=5, target_column="label")
-    return X_test, y_test, labeled_data["close"].values
+    
+    # Keep the actual 'close' prices for later use
+    actual_prices = raw_data["close"].values
 
-# --- Model Functions ---
+    # Normalize the data
+    normalized_data = normalize_data(raw_data, ["open", "high", "low", "close"])
+
+    # Generate labels
+    labeled_data = generate_labels(normalized_data, threshold=0.5)
+
+    # Create sequences for RNN
+    X_test, y_test = create_sequences(labeled_data, sequence_length=5, target_column="label")
+    
+    return X_test, y_test, actual_prices
+
 def softmax(z):
     exp_z = np.exp(z - np.max(z))
     return exp_z / np.sum(exp_z, axis=0)
@@ -82,8 +95,8 @@ def forward_pass_stacked(X, params):
     Wy, by = params["Wy"], params["by"]
 
     sequence_length = X.shape[0]
-    h_t1 = np.zeros((Wx1.shape[0], 1))
-    h_t2 = np.zeros((Wx2.shape[0], 1))
+    h_t1 = np.zeros((Wx1.shape[0], 1))  # Hidden state for first layer
+    h_t2 = np.zeros((Wx2.shape[0], 1))  # Hidden state for second layer
 
     for t in range(sequence_length):
         x_t = X[t].reshape(-1, 1)
@@ -100,8 +113,7 @@ def load_model(file_path="model.pkl"):
         print(f"Model loaded from {file_path}")
         return params
     else:
-        print("No saved model found.")
-        return None
+        raise FileNotFoundError("No saved model found. Ensure that the model.pkl file exists.")
 
 def predict(X, params):
     y_pred = forward_pass_stacked(X, params)
@@ -119,38 +131,63 @@ def plot_predictions(prices, predictions, actual_labels):
     plt.ylabel("Price")
     plt.legend(["Prices", "Correct Prediction", "Wrong Prediction"], loc="upper left")
     plt.grid()
-    plt.show()
+    plt.savefig("PREDGRAPH2.png")
 
-def simulate_latest_day(X_test, y_test, params, close_prices):
+def simulate_latest_day_with_table(X_test, y_test, params, actual_prices):
     correct = 0
     predictions = []
+    results_table = []
 
     print("Simulated Predictions for the Latest Day:")
-    print("-" * 50)
+    print("-" * 80)
 
     for i, (X, y) in enumerate(zip(X_test, y_test)):
         y_pred = predict(X, params)
         predictions.append(y_pred)
 
-        actual_price = close_prices[i]
+        # Use actual prices
+        actual_price = actual_prices[i]
+        next_price = actual_prices[i + 1] if i + 1 < len(actual_prices) else "N/A"
+
+        # Extract labels
         prediction_label = ["Down", "Flat", "Up"][y_pred]
         actual_label = ["Down", "Flat", "Up"][int(y)]
 
+        # Check correctness
         is_correct = "Correct!" if y_pred == int(y) else "Wrong!"
-        print(f"Step {i + 1}: Price {actual_price:.2f} | Pred: {prediction_label} | Act: {actual_label} | {is_correct}")
+
+        # Append results to table
+        results_table.append({
+            "Step": i + 1,
+            "Actual Price": actual_price,
+            "Next Price": next_price,
+            "Model Prediction": prediction_label,
+            "Actual Label": actual_label,
+            "Result": is_correct,
+        })
 
         if y_pred == int(y):
             correct += 1
 
+    # Calculate accuracy
     accuracy = (correct / len(y_test)) * 100
-    print("-" * 50)
+    print("-" * 80)
     print(f"Simulated Accuracy: {accuracy:.2f}%")
 
-    plot_predictions(close_prices[:len(predictions) + 1], predictions, y_test)
+    # Display as a DataFrame
+    results_df = pd.DataFrame(results_table)
+    print(results_df)
+
+    # Save results
+    results_df.to_csv("simulation_results.csv", index=False)
+    print("Simulation results saved to 'simulation_results.csv'.")
+
+    # Plot
+    plot_predictions(actual_prices[:len(predictions) + 1], predictions, y_test)
 
 # --- Main ---
 if __name__ == "__main__":
-    DAYS = 1
+    DAYS = 3
     INTERVAL = "minute"
     instrument_to_fetch = NFT
 
@@ -169,5 +206,4 @@ if __name__ == "__main__":
     X_test, y_test, close_prices = preprocess_latest_data()
     params = load_model()
 
-    if params:
-        simulate_latest_day(X_test, y_test, params, close_prices)
+    simulate_latest_day_with_table(X_test, y_test, params, close_prices)
