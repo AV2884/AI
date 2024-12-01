@@ -33,6 +33,7 @@ def fetch_historical_data(instrument_token, from_date, to_date, interval):
     )
     return pd.DataFrame(data)
 
+
 def save_to_csv(df,intrument_token):
     base_path = "/root/aiRoot/0-AI/AI/recurrentNeuralNetwork/data/"
     if intrument_token == 256265:
@@ -44,11 +45,12 @@ def save_to_csv(df,intrument_token):
     file_path = base_path + f"{index}_raw.csv"
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
     df.to_csv(file_path, index=False)
+    print(f"Data fetching complete. Saved to {file_path}")
 
 
 if __name__ == "__main__":
 #------------------------------------------------
-    DAYS = 100
+    DAYS = 730
     INTERVEL = "minute"
     instrument_to_fetch = NFT
 #------------------------------------------------
@@ -74,9 +76,8 @@ if __name__ == "__main__":
         data = pd.concat([data, chunk_data], ignore_index=True)
         current_start = current_end
 
-    data = data.drop(columns=['volume'])
     describe_data(data)
     save_to_csv(data,instrument_to_fetch)
-    print("Data fetching complete. Saved to data/nifty_50_data.csv")
+
 
 
