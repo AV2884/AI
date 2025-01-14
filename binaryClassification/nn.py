@@ -257,7 +257,7 @@ init_method = "x"       # "x" for Xavier or "r" for random initialization
 activation = "r"        # "s" for sigmoid or "r" for ReLU
 mode = "t"              # "t" for train or "p" for predict
 learning_rate = 0.001
-num_epochs = 10
+num_epochs = 100
 
 # Set the activation function for hidden layers
 activation_hidden = "sigmoid" if activation == "s" else "relu"
