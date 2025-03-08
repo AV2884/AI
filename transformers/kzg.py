@@ -1,6 +1,7 @@
 import numpy as np
 import random
 import re
+import openai  # OpenAI API for LLM sentence refinement
 from sympy import symbols, interpolate
 from sklearn.decomposition import PCA
 from sklearn.neighbors import NearestNeighbors
@@ -9,12 +10,14 @@ import matplotlib.pyplot as plt
 from collections import defaultdict
 
 # ----------------------- 🔹 CONFIGURABLE VARIABLES -----------------------
-SAMPLE_PERCENT = 0.3    # 30% of data used for polynomial fitting
-MARKOV_ORDER = 6           # Order of Markov chain (higher = better fluency)
+SAMPLE_PERCENT = 0.5       # 30% of data used for polynomial fitting
+MARKOV_ORDER = 7           # Higher order for better fluency
 SENTENCE_LENGTH = 15       # Length of generated sentences
 INTERPOLATION_METHOD = 'quadratic'  # Can be 'linear', 'quadratic', or 'cubic'
 NOISE_SCALE = 0.1          # Amount of random noise added
 SAVE_PLOT = "generated_plot.png"  # Output path for saved plot
+USE_LLM_REFINEMENT = False  # Enable LLM-based sentence enhancement
+OPENAI_API_KEY = "your-openai-api-key"  # Set your OpenAI API key
 
 print("🔄 Loading dataset...")
 
@@ -25,12 +28,13 @@ try:
 except ImportError:
     # Default dataset in case `data.py` is missing
     read_data = """
-    AI models need proper evaluation metrics.
-    Hyperparameter tuning improves model performance.
-    I want to build a privacy-preserving AI model.
-    Generating fake data helps anonymization.
+    ACT I
+    My lord, what dost thou think of the matter?
+    'Tis but a fleeting dream, yet truth doth lie within.
+    Speak, O noble one, for time hast given thee wisdom.
+    Love and honor do dance upon the wind of fate.
     """
-    print("⚠️ 'data.py' not found. Using default dataset.")
+    print("⚠️ 'data.py' not found. Using default Shakespeare-style dataset.")
 
 print("🔄 Tokenizing dataset...")
 
@@ -43,7 +47,7 @@ data_sequence = [word_to_index[word] for word in words]
 print(f"✅ Tokenization complete. Total words: {len(words)}")
 
 # 🔹 Set START_WORDS to the first 2 words of the dataset
-START_WORDS = words[:2] if len(words) >= 2 else ["AI", "models"]
+START_WORDS = words[:2] if len(words) >= 2 else ["ACT", "I"]
 print(f"🔹 Automatically set START_WORDS to: {START_WORDS}")
 
 # ----------------------- 🔹 Select Sample Data -----------------------
@@ -105,11 +109,33 @@ def generate_sentence(markov_chain, start_word, length=SENTENCE_LENGTH):
 markov_chain = build_markov_chain(words, order=MARKOV_ORDER)
 synthetic_text_markov = generate_sentence(markov_chain, START_WORDS, SENTENCE_LENGTH)
 
-print("✅ Sentence generation complete!")
+print("✅ Markov sentence generation complete.")
+
+# ----------------------- 🔹 LLM-Based Sentence Refinement -----------------------
+def refine_with_llm(text):
+    print("🔄 Sending sentence to LLM for refinement...")
+    openai.api_key = OPENAI_API_KEY
+    
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": "You are an expert in Shakespearean English. Refine the given sentence while preserving its poetic structure."},
+            {"role": "user", "content": text}
+        ]
+    )
+    
+    refined_text = response["choices"][0]["message"]["content"]
+    print("✅ LLM refinement complete.")
+    return refined_text
+
+if USE_LLM_REFINEMENT:
+    synthetic_text_final = refine_with_llm(synthetic_text_markov)
+else:
+    synthetic_text_final = synthetic_text_markov
 
 # ----------------------- 🔹 Display Final Generated Synthetic Text -----------------------
-print("\n📜 Generated Synthetic Text:")
-print(synthetic_text_markov)
+print("\n📜 Generated Synthetic Text (LLM-Refined):")
+print(synthetic_text_final)
 
 # ----------------------- 🔹 Visualization Plot -----------------------
 print("🔄 Creating visualization plot...")

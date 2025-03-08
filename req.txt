@@ -3,3 +3,6 @@ sympy
 scikit-learn
 scipy
 matplotlib
+py_ecc
+tqdm
+nltk
