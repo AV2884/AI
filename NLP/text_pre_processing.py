@@ -13,7 +13,8 @@ nltk.download('stopwords')
 all_positive_tweets = twitter_samples.strings('positive_tweets.json')
 all_negative_tweets = twitter_samples.strings('negative_tweets.json')
 
-tweet1 = all_positive_tweets[0]
+# tweet1 = all_positive_tweets[0]
+tweet1 = 'I am happy because I am learning NLP @deeplearning'
 
 print("ORIGINAL TWEET","-"*100)
 print(f"\n{tweet1}\n")  
@@ -86,11 +87,39 @@ print(tweets_stem)
 
 
 #---------------ONE SHOT PROCCESS---------------------
-# choose the same tweet
-# tweet = all_positive_tweets[2277]
+def process_tweet(tweet):
+    """
+    Preprocesses a given tweet:
+    - Removes RT, mentions (@user), links, and hashtags
+    - Tokenizes the text
+    - Removes stopwords and punctuation
+    - Applies stemming
+    
+    Returns:
+    - List of cleaned and stemmed words
+    """
 
-# # call the imported function
-# tweets_stem = process_tweet(tweet); # Preprocess a given tweet
+    # Step 1: Remove Twitter styles and unwanted text
+    tweet = re.sub(r'^RT[\s]+', '', tweet)  # Remove RT
+    tweet = re.sub(r'https?://[^\s\n\r]+', '', tweet)  # Remove hyperlinks
+    tweet = re.sub(r'#', '', tweet)  # Remove only the # symbol
 
-# print('preprocessed tweet:')
-# print(tweets_stem) # Print the result
+    # Step 2: Tokenize the tweet
+    tokenizer = TweetTokenizer(preserve_case=False, strip_handles=True, reduce_len=True)
+    tweet_tokens = tokenizer.tokenize(tweet)
+
+    # Step 3: Remove stopwords and punctuation
+    stopwords_english = set(stopwords.words('english'))  # Use set for faster lookup
+    tweets_clean = [word for word in tweet_tokens if word not in stopwords_english and word not in string.punctuation]
+
+    # Step 4: Apply Stemming
+    stemmer = PorterStemmer()
+    tweets_stem = [stemmer.stem(word) for word in tweets_clean]
+
+    return tweets_stem  # Return processed tweet
+
+tweet = tweet1
+# call the imported function
+tweets_stem = process_tweet(tweet); 
+print('preprocessed tweet:')
+print(tweets_stem) # Print the result
