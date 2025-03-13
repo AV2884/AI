@@ -74,4 +74,77 @@ for key , value in freq_table.items():
 
 #STEP 3 (logistic regression)-----------------------------------------------------
 
-def s
+
+def sigmoid(z):
+    z = np.clip(z, -500, 500)  # Prevent overflow
+    return 1 / (1 + np.exp(-z))
+
+
+def extract_features(tweet, freq_table):
+    x = np.zeros(1 + len(freq_table)) 
+
+    x[0] = 1  # Bias term
+
+    for word in tweet:
+        if word in freq_table:
+            x[1 + list(freq_table.keys()).index(word)] = sum(freq_table[word])  # Total frequency
+    
+    return x
+
+
+def initialize_weights(n):
+    return np.zeros(n)
+
+
+def compute_loss(y, y_hat):
+    epsilon = 1e-9
+    y_hat = np.clip(y_hat, epsilon, 1 - epsilon)
+    return -np.sum(y * np.log(y_hat) + (1 - y) * np.log(1 - y_hat)) / len(y)
+
+
+def gradient_descent(X, y, w, alpha, epochs):
+    """
+    Perform batch gradient descent to optimize weights.
+
+    Args:
+    - X: Feature matrix
+    - y: Labels
+    - w: Weights
+    - alpha: Learning rate
+    - epochs: Number of iterations
+
+    Returns:
+    - w: Updated weights
+    - loss_history: Loss at each step
+    """
+    m = len(y)
+    loss_history = []
+
+    for i in range(epochs):
+        z = np.dot(X, w)
+        y_hat = sigmoid(z)
+
+        loss = compute_loss(y, y_hat)
+        loss_history.append(loss)
+
+        grad = np.dot(X.T, (y_hat - y)) / m
+        w -= alpha * grad
+
+        if i % 100 == 0:
+            print(f"Epoch {i}: Loss = {loss}")
+
+    return w, loss_history
+
+# Convert all tweets to feature vectors
+X = np.array([extract_features(tweet, freq_table) for tweet in tweets])
+X = X / np.max(X, axis=0)  # Prevent large values
+y = np.array(labels)
+
+# Initialize weights
+w = initialize_weights(X.shape[1])
+
+# Train model
+alpha = 100
+epochs = 100000
+w, loss_history = gradient_descent(X, y, w, alpha, epochs)
+
