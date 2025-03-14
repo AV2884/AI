@@ -15,8 +15,8 @@ from tqdm import tqdm
 # ============================
 # 🚀 HYPERPARAMETERS
 # ============================
-ALPHA = 0.1        # Learning rate
-EPOCHS = 5000       # Number of training iterations
+ALPHA = 0.001        # Learning rate
+EPOCHS = 1000       # Number of training iterations
 CHECKPOINT_EVERY = 200  # Save model every X epochs
 CHECKPOINT_DIR = "checkpoints"
 FREQ_TABLE_PATH = os.path.join(CHECKPOINT_DIR, "freq_table.pkl")
@@ -182,6 +182,9 @@ def gradient_descent(X, y, w, alpha, epochs):
     - w: Updated weights
     - loss_history: Loss at each step
     """
+    print(f"Feature Vector Shape: {X.shape}")
+    print(f"Feature Vector Sample: {X[:5]}")
+
     m = len(y)
     loss_history = []
     start_time = time.time()  # Track total training time
@@ -219,13 +222,16 @@ def gradient_descent(X, y, w, alpha, epochs):
 
         # Print loss updates every 10 epochs
         if i % 10 == 0:
+            accuracy = compute_accuracy(X, y, w)
             if delta_loss is not None:
                 tqdm.write(
                     f"Epoch <{i:5d}> : Loss {loss:.7f} : ΔLoss {delta_loss: .7f} | "
-                    f"ETC: {estimated_completion_time:.2f} sec | T: {total_elapsed_time:.2f} sec"
+                    f"ETC: {estimated_completion_time:.2f}s | T: {total_elapsed_time:.2f} s | accuracy = {accuracy:.2f}%"
                 )
             else:
-                tqdm.write(f"Epoch <{i}> : Loss {loss:.7f} : ΔLoss N/A | T: {total_elapsed_time:.2f} sec")
+                tqdm.write(f"Epoch <{i}> : Loss {loss:.7f} : ΔLoss N/A | T: {total_elapsed_time:.2f} s | accuracy = {accuracy:.2f}%")
+
+            
 
             previous_loss = loss  # Update previous loss for next iteration
 
@@ -249,6 +255,17 @@ def gradient_descent(X, y, w, alpha, epochs):
     tqdm.write("[INFO] Final weights saved successfully.")
 
     return w, loss_history
+
+
+def compute_accuracy(X, y, w):
+    z = np.dot(X, w)  # Compute model output
+    y_hat = sigmoid(z)  # Convert to probability
+    predictions = (y_hat >= 0.5).astype(int)  # Convert probabilities to 0 or 1
+
+    correct_predictions = np.sum(predictions == y)
+    accuracy = (correct_predictions / len(y)) * 100
+
+    return accuracy
 
 # ============================
 # 🔹 STEP 7: TRAIN THE MODEL
@@ -274,7 +291,8 @@ print(f"[INFO] Starting training from epoch {start_epoch} to {EPOCHS}...")
 w, loss_history = gradient_descent(X, y, w, ALPHA, EPOCHS)
 
 print("[INFO] Training complete! Final model saved.")
-
+accuracy = compute_accuracy(X, y, w)
+print(f"[INFO] Model accuracy: {accuracy:.3f}%")
 final_checkpoint = os.path.join(CHECKPOINT_DIR, "final_weights.npy")
 np.save(final_checkpoint, w)
 print(f"[INFO] Final weights saved at {final_checkpoint}")
