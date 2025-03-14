@@ -98,12 +98,14 @@ def predict(tweet, model_weights):
     prediction = sigmoid(np.dot(features, model_weights))
     return "Positive 😊" if prediction >= 0.5 else "Negative 😞"
 
+
 # ============================
 # 🔹 RUN PREDICTION
 # ============================
 if __name__ == "__main__":
     print("[INFO] Loading trained model...")
     model_weights = load_model()
+
     while(True):
         tweet_input = input("\nEnter a tweet to analyze sentiment: ")
         sentiment = predict(tweet_input, model_weights)
