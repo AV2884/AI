@@ -271,38 +271,45 @@ def compute_accuracy(X, y, w):
 
     return accuracy
 
-# ============================
-# 🔹 STEP 7: TRAIN THE MODEL
-# ============================
+#=-=-=-=-=-=-==-=-=-=-=-=-==-=-=-=-=-=-==-=-=-=-=-=-==-=-=-=-=-=-==-=-=-=-=-=-==-=-=-=-=-=-==-=-=-=-=-=-==-=-=-=-=-=-=
 
 print("[INFO] Extracting features...")
 X = np.array([extract_features(tweet, freq_table) for tweet in tweets])
-X = X / np.max(X, axis=0)  # Prevent large values
+
+# Normalize features to prevent large values
+X = X / (np.max(X, axis=0) + 1e-8)  # Adding small value to avoid division by zero
 y = np.array(labels)
+
+# Split data into 80% train and 20% test
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+print(f"[INFO] Training samples: {X_train.shape[0]}, Testing samples: {X_test.shape[0]}")
+
+
 print("[INFO] Initializing weights...")
-w = initialize_weights(X.shape[1])
+w = initialize_weights(X_train.shape[1])  # Initialize based on training features
+
+start_epoch = 0  # Default starting epoch
 
 if LOAD_TRAINED_MODEL:
     w, start_epoch = load_latest_checkpoint()
-    if w is None:  
-        w = initialize_weights(X.shape[1])
+    if w is None:  # If no checkpoint exists, start fresh
+        print("[INFO] No saved model found. Initializing fresh weights.")
+        w = initialize_weights(X_train.shape[1])
         start_epoch = 0
 else:
-    w = initialize_weights(X.shape[1])
-    start_epoch = 0
+    print("[INFO] Training from scratch...")
+    w = initialize_weights(X_train.shape[1])
 
 print(f"[INFO] Starting training from epoch {start_epoch} to {EPOCHS}...")
-w_before = w.copy()  # Save initial weights
-w, loss_history = gradient_descent(X, y, w, ALPHA, EPOCHS)
-w_after = w
+w_before = w.copy()  # Store initial weights
 
-print(f"Weight Change: {np.sum(np.abs(w_after - w_before))}")
+# Train only on the training set
+w, loss_history = gradient_descent(X_train, y_train, w, ALPHA, EPOCHS)
 
+w_after = w  # Store updated weights
 
-print("[INFO] Training complete! Final model saved.")
-accuracy = compute_accuracy(X, y, w)
-print(f"[INFO] Model accuracy: {accuracy:.3f}%")
+print("[INFO] Training complete! Saving final model...")
 final_checkpoint = os.path.join(CHECKPOINT_DIR, "final_weights.npy")
 np.save(final_checkpoint, w)
 print(f"[INFO] Final weights saved at {final_checkpoint}")
@@ -310,5 +317,6 @@ print(f"[INFO] Final weights saved at {final_checkpoint}")
 train_accuracy = compute_accuracy(X_train, y_train, w)
 test_accuracy = compute_accuracy(X_test, y_test, w)
 
-print(f"Train Accuracy: {train_accuracy:.2f}%")
-print(f"Test Accuracy: {test_accuracy:.2f}%")
+print(f"[INFO] Weight Change During Training: {np.sum(np.abs(w_after - w_before)):.6f}")
+print(f"[INFO] Train Accuracy: {train_accuracy:.2f}%")
+print(f"[INFO] Test Accuracy: {test_accuracy:.2f}%")
