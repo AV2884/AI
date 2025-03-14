@@ -106,6 +106,12 @@ if __name__ == "__main__":
     print("[INFO] Loading trained model...")
     model_weights = load_model()
 
+    test_tweets = ["I love this!", "I hate this", "Neutral day."]
+    for tweet in test_tweets:
+        sentiment = predict(tweet, model_weights)
+        print(f"Tweet: {tweet} → Prediction: {sentiment}")
+
+
     while(True):
         tweet_input = input("\nEnter a tweet to analyze sentiment: ")
         sentiment = predict(tweet_input, model_weights)
