@@ -1,3 +1,4 @@
+from sklearn.model_selection import train_test_split
 import time
 import nltk
 import re
@@ -36,6 +37,8 @@ nltk.download('stopwords')
 print("[INFO] Loading tweets...")
 all_positive_tweets = twitter_samples.strings('positive_tweets.json')
 all_negative_tweets = twitter_samples.strings('negative_tweets.json')
+
+
 print(f"[INFO] Loaded {len(all_positive_tweets)} positive and {len(all_negative_tweets)} negative tweets.")
 
 # Initialize tokenizer and stemmer
@@ -196,6 +199,7 @@ def gradient_descent(X, y, w, alpha, epochs):
     # Overall tqdm progress bar
     pbar = tqdm(total=epochs, desc="[INFO] Training Progress", unit="epoch", position=1, leave=True)
 
+
     for i in range(epochs):
         iter_start_time = time.time()  # Track time per iteration
 
@@ -261,7 +265,7 @@ def compute_accuracy(X, y, w):
     z = np.dot(X, w)  # Compute model output
     y_hat = sigmoid(z)  # Convert to probability
     predictions = (y_hat >= 0.5).astype(int)  # Convert probabilities to 0 or 1
-
+    print(f"Unique Predictions: {np.unique(predictions, return_counts=True)}")
     correct_predictions = np.sum(predictions == y)
     accuracy = (correct_predictions / len(y)) * 100
 
@@ -270,11 +274,12 @@ def compute_accuracy(X, y, w):
 # ============================
 # 🔹 STEP 7: TRAIN THE MODEL
 # ============================
+
 print("[INFO] Extracting features...")
 X = np.array([extract_features(tweet, freq_table) for tweet in tweets])
 X = X / np.max(X, axis=0)  # Prevent large values
 y = np.array(labels)
-
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 print("[INFO] Initializing weights...")
 w = initialize_weights(X.shape[1])
 
@@ -288,7 +293,12 @@ else:
     start_epoch = 0
 
 print(f"[INFO] Starting training from epoch {start_epoch} to {EPOCHS}...")
+w_before = w.copy()  # Save initial weights
 w, loss_history = gradient_descent(X, y, w, ALPHA, EPOCHS)
+w_after = w
+
+print(f"Weight Change: {np.sum(np.abs(w_after - w_before))}")
+
 
 print("[INFO] Training complete! Final model saved.")
 accuracy = compute_accuracy(X, y, w)
@@ -296,3 +306,9 @@ print(f"[INFO] Model accuracy: {accuracy:.3f}%")
 final_checkpoint = os.path.join(CHECKPOINT_DIR, "final_weights.npy")
 np.save(final_checkpoint, w)
 print(f"[INFO] Final weights saved at {final_checkpoint}")
+
+train_accuracy = compute_accuracy(X_train, y_train, w)
+test_accuracy = compute_accuracy(X_test, y_test, w)
+
+print(f"Train Accuracy: {train_accuracy:.2f}%")
+print(f"Test Accuracy: {test_accuracy:.2f}%")
