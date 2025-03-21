@@ -16,9 +16,9 @@ from tqdm import tqdm
 # ============================
 # 🚀 HYPERPARAMETERS
 # ============================
-ALPHA = 0.001        # Learning rate
-EPOCHS = 1000       # Number of training iterations
-CHECKPOINT_EVERY = 200  # Save model every X epochs
+ALPHA = 0.001              # Learning rate
+EPOCHS = 1000              # Number of training iterations
+CHECKPOINT_EVERY = 200     # Save model every X epochs
 CHECKPOINT_DIR = "checkpoints"
 FREQ_TABLE_PATH = os.path.join(CHECKPOINT_DIR, "freq_table.pkl")
 LOAD_TRAINED_MODEL = True
@@ -302,7 +302,7 @@ else:
     w = initialize_weights(X_train.shape[1])
 
 print(f"[INFO] Starting training from epoch {start_epoch} to {EPOCHS}...")
-w_before = w.copy()  # Store initial weights
+w_before = w.copy()  
 
 # Train only on the training set
 w, loss_history = gradient_descent(X_train, y_train, w, ALPHA, EPOCHS)
