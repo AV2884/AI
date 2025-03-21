@@ -19,7 +19,7 @@ hidden_units_1 = 25
 hidden_units_2 = 15
 output_units = 10
 
-image_path="/root/aiRoot/0-AI/AI/multi-classClassification/data/fig.png"
+image_path="/root/aiRoot/0-AI/AI/multiClassClassification/plots/fig.png"
 
 #Activation functions
 def relu(z):
@@ -162,7 +162,7 @@ def gradient_descent(X, y, W1, b1, W2, b2, W3, b3, learning_rate=0.01, epochs=10
     save_folder = "checkpoints"
     os.makedirs(save_folder, exist_ok=True)
     previous_cost = None
-    image_path_cost = "/root/aiRoot/0-AI/AI/multi-classClassification/checkpoints/cost_plot.png"
+    image_path_cost = "/root/aiRoot/0-AI/AI/multiClassClassification/png"
     save_interval = 500
     start_time = time.time()
     iter_start_time = time.time()  # To track time per iteration
@@ -355,8 +355,8 @@ y_train_one_hot = one_hot_encode(y_train)  # One-hot encode y_train
 
 
 mode = "t"          # "t" for train, "p" for predict
-learning_rate = 0.001
-num_epochs = 100
+learning_rate = 0.01
+num_epochs = 499
 
 
 if mode == "t":
@@ -432,7 +432,7 @@ elif mode == "p":
 else:
     # sample_data_image(10,10)
     # print("Invalid mode selected.")
-    image_path = '/root/aiRoot/0-AI/AI/multi-classClassification/test-8.png'
+    image_path = '/root/aiRoot/0-AI/AI/MultiClassClassification/png/output.png'
     W1 = np.load("models/W1.npy")
     b1 = np.load("models/b1.npy")
     W2 = np.load("models/W2.npy")
