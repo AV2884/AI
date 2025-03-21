@@ -354,7 +354,7 @@ weights_and_biases = ["models/W1.npy", "models/b1.npy", "models/W2.npy", "models
 y_train_one_hot = one_hot_encode(y_train)  # One-hot encode y_train
 
 
-mode = "t"          # "t" for train, "p" for predict
+mode = "p"          # "t" for train, "p" for predict
 learning_rate = 0.01
 num_epochs = 499
 
