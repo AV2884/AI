@@ -353,11 +353,9 @@ def preprocess_custom_image(image_path):
 weights_and_biases = ["models/W1.npy", "models/b1.npy", "models/W2.npy", "models/b2.npy", "models/W3.npy", "models/b3.npy"]
 y_train_one_hot = one_hot_encode(y_train)  # One-hot encode y_train
 
-
-mode = "p"          # "t" for train, "p" for predict
+mode = "t"          # "t" for train, "p" for predict
 learning_rate = 0.01
-num_epochs = 499
-
+num_epochs = 500
 
 if mode == "t":
     if all(os.path.exists(file) for file in weights_and_biases):
