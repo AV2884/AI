@@ -11,3 +11,4 @@ string
 pickle
 tqdm
 os
+torch
