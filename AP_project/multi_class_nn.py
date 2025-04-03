@@ -14,7 +14,6 @@ weights_and_biases = [
     "models/W3.npy", "models/b3.npy"
 ]
 
-
 #Define NN structure
 input_units = x_train.shape[1]
 hidden_units_1 = 25
@@ -188,7 +187,7 @@ y_train_one_hot = one_hot_encode(y_train)  # One-hot encode y_train
 # PARAMS -------------
 mode = "t"              # "t" for train, "p" for predict
 learning_rate = 0.01
-num_epochs = 20000
+num_epochs = 10000
 #----------------------
 
 y_train_one_hot = one_hot_encode(y_train)
