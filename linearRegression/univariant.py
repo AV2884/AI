@@ -1,4 +1,5 @@
 import numpy as np
+import time
 import matplotlib.pyplot as plt
 
 x_train_us = np.array([800, 1000, 1200, 1500, 1800, 2000, 2300, 2600, 3000, 3500, 4000, 4500, 5000])  # sq ft
@@ -46,21 +47,33 @@ def gradient_descent(w ,b, alpha, num_iters):
     return w , b
 
 # Test compute_gradient with some initial values
-initial_w = 1272.4309201554588 #Pretrained w
-initial_b = 224.04991993731397 #Pretrained b
+initial_w = 0
+initial_b = 0
 learning_rate = 0.0001
-num_iterations = 1000000
+num_iterations = 1_00_00_000
 
 #For training uncomment---------------------------------------------------------------
-# final_w, final_b = gradient_descent(initial_w, initial_b, learning_rate, num_iterations)
-
-# print(f"Final values: w = {final_w}, b = {final_b}")
-# cost = J(final_w,final_b)x
-# print(f"final cost :  {cost}")
+start_time = time.time()
+initial_cost = J(initial_w, initial_b)
+final_w, final_b = gradient_descent(initial_w, initial_b, learning_rate, num_iterations)
+end_time = time.time()
+final_cost = J(final_w, final_b)
+time_taken = end_time - start_time
+x_new_us = 1000
+x_new = (x_new_us - x_min) / (x_max - x_min)
+predicted_price = F(final_w, final_b, x_new)
+cost = J(final_w,final_b)
+print("\n=== Summary ===")
+print(f"Training Time: {time_taken:.4f} seconds")
+print(f"Initial Cost: {initial_cost:.4f}")
+print(f"Final Cost: {final_cost:.4f}")
+print(f"Cost Reduced By: {((initial_cost - final_cost)/initial_cost)*100:.2f}%")
+print(f"Final Weights: w = {final_w:.4f}, b = {final_b:.4f}")
+print(f"Prediction for {x_new_us} sq ft: {predicted_price:.2f} (in thousands of dollars)")
 #--------------------------------------------------------------------------------------
-x_new_us = 1000 
-x_new = (x_new_us - x_min) / (x_max - x_min)  # Scale the new input value
-w = 1272.4309201554588
-b = 224.04991993731397
-predicted_price = F(w, b, x_new)
-print(f"Predicted price for {x_new_us} sq ft house: {predicted_price} (in thousands of dollars)")
+# x_new_us = 1000 
+# x_new = (x_new_us - x_min) / (x_max - x_min)  # Scale the new input value
+# w = 1272.4309201554588
+# b = 224.04991993731397
+# predicted_price = F(w, b, x_new)
+
