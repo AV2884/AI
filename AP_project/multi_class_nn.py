@@ -16,10 +16,10 @@ hidden_units_1  = 25
 hidden_units_2  = 15
 output_units    = 10
 
-
 # Helper functions
 def clear_terminal():
     os.system('cls' if os.name == 'nt' else 'clear')
+
 def format_time(seconds):
     minutes = int(seconds // 60)
     remaining_seconds = int(seconds % 60)
@@ -113,33 +113,25 @@ def gradient_descent(X, y, W1, b1, W2, b2, W3, b3, learning_rate=0.01, epochs=10
     for i in range(epochs):
         z1, a1, z2, a2, a3 = forward_pass(X, W1, b1, W2, b2, W3, b3)
         cost = compute_cost(y, a3)
-
         if i % 100 == 0:
             costs.append(cost)
             iterations.append(i)
-
         dW1, db1, dW2, db2, dW3, db3 = compute_gradients(X, y, W1, W2, W3, z1, z2, a1, a2, a3)
-
         W1 -= learning_rate * dW1
         W2 -= learning_rate * dW2
         W3 -= learning_rate * dW3
         b1 -= learning_rate * db1
         b2 -= learning_rate * db2
         b3 -= learning_rate * db3
-
         total_time = time.time() - start_time
         avg_time_per_iter = total_time / (i + 1)
         etc = (epochs - i - 1) * avg_time_per_iter
-
         if i % 10 == 0:
             delta = previous_cost - cost if previous_cost else 0
             print(f"Iter <{i:5d}> : cost {cost:.7f} : Δcost {delta:.7f} | ETC: {format_time(etc):>8} | T: {format_time(total_time):>8}")
             previous_cost = cost
-
     training_time = time.time() - start_time
     print(f"\nTraining completed in {training_time:.2f} seconds.")
-
-    # Save weights
     os.makedirs("models", exist_ok=True)
     np.save("models/W1.npy", W1)
     np.save("models/b1.npy", b1)
@@ -148,8 +140,6 @@ def gradient_descent(X, y, W1, b1, W2, b2, W3, b3, learning_rate=0.01, epochs=10
     np.save("models/W3.npy", W3)
     np.save("models/b3.npy", b3)
     print("Final weights and biases saved.")
-
-    # Plot
     plt.plot(iterations, costs, marker='o')
     plt.xlabel("Iterations")
     plt.ylabel("Cost")
@@ -158,13 +148,11 @@ def gradient_descent(X, y, W1, b1, W2, b2, W3, b3, learning_rate=0.01, epochs=10
     plt.savefig("cost_vs_iterations.png", dpi=120, bbox_inches='tight')
     plt.close()
     print("Cost graph saved as 'cost_vs_iterations.png'.")
-
     return W1, b1, W2, b2, W3, b3, training_time
-
 
 # Main Execution
 # ---- Parameters ----
-mode = "t"    # t -> training p -> for prediction
+mode = ""    # t -> training p -> for prediction
 learning_rate = 0.01
 num_epochs    = 1000
 # ---------------------
