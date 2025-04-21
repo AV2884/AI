@@ -253,11 +253,11 @@ def display_predictions(sample_images, predictions, sample_labels):
 
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 # Configuration settings
-init_method = "x"       # "x" for Xavier or "r" for random initialization
-activation = "r"        # "s" for sigmoid or "r" for ReLU
+init_method = "r"       # "x" for Xavier or "r" for random initialization
+activation = "s"        # "s" for sigmoid or "r" for ReLU
 mode = "t"              # "t" for train or "p" for predict
 learning_rate = 0.001
-num_epochs = 100
+num_epochs = 10_000
 
 # Set the activation function for hidden layers
 activation_hidden = "sigmoid" if activation == "s" else "relu"

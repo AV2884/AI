@@ -152,9 +152,9 @@ def gradient_descent(X, y, W1, b1, W2, b2, W3, b3, learning_rate=0.01, epochs=10
 
 # Main Execution
 # ---- Parameters ----
-mode = ""    # t -> training p -> for prediction
-learning_rate = 0.01
-num_epochs    = 1000
+mode = "t"    # t -> training p -> for prediction
+learning_rate = 0.00889
+num_epochs    = 1_00_000
 # ---------------------
 
 weights_and_biases = ["models/W1.npy", "models/b1.npy", "models/W2.npy", "models/b2.npy", "models/W3.npy", "models/b3.npy"]
