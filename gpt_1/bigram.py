@@ -1,71 +1,71 @@
 import numpy as np
 
+# 1. load the book
 with open("data/input.txt", encoding="utf-8") as f:
     text = f.read()
+print(f"book: {len(text)} characters")
 
-char = list(sorted(set(text)))
+# 2. tokenizer: every character gets a number, its position in chars
+chars = sorted(set(text))
 stoi = {}
 itos = {}
 
-for i in range(len(char)):
-    stoi[char[i]] = i
+for i in range(len(chars)):
+    stoi[chars[i]] = i
 
-for i in range(len(char)):
-    itos[i] = char[i] 
+for i in range(len(chars)):
+    itos[i] = chars[i]
 
 def encode(msg):
     encoded = []
-    for char in msg:
-        asign = stoi[char]
-        encoded.append(asign)
+    for c in msg:
+        encoded.append(stoi[c])
     return encoded
 
-
-def decode(msg):
+def decode(ids):
     decoded = ""
-
-    for i in msg:
+    for i in ids:
         decoded += itos[i]
-
     return decoded
 
+print(f"vocabulary: {len(chars)} characters")
+print(f"hello -> {encode('hello')}")
+print(f"round trip ok: {decode(encode(text)) == text}")
+
+# 3. the whole book as an array of numbers
 data = np.array(encode(text))
-# print(data.shape)
-# print(data[:5])
-# print(decode(data[:13]))
+print(f"data: {data.shape} starts {data[:5]}")
 
-N = np.zeros((len(char),len(char)),dtype=int)
+# 4. count the pairs: N[first, next] = how many times next followed first
+N = np.zeros((len(chars), len(chars)), dtype=int)
 
-for i in range(len(data)-1):
-    N[data[i], data[i+1]] += 1
+for i in range(len(data) - 1):
+    N[data[i], data[i + 1]] += 1
 
-sum_of_rows = N.sum(axis=1,keepdims=True)
+print(f"pairs counted: {N.sum()}, th: {N[stoi['t'], stoi['h']]}")
+
+# 5. counts to chances: divide every row by its own total
+sum_of_rows = N.sum(axis=1, keepdims=True)
 P = N / sum_of_rows
-# print(P[stoi["q"], stoi["u"]])
-# print(P[stoi["t"], stoi["h"]])
-# print(P.sum(axis=1)[:5])
+print(f"chance of h after t: {P[stoi['t'], stoi['h']]:.3f}")
 
-# rng = np.random.default_rng(1337)
-# out = []
-# current = 0
-# for i in range(300):
-#     current = rng.choice(65, p=P[current])
-#     print(current)
-#     out.append(current)
-# print(decode(out))
+# 6. the model writes: stand on a character, roll its row, move there, repeat
+rng = np.random.default_rng(1337)
+out = []
+current = 0
+for i in range(300):
+    current = rng.choice(len(chars), p=P[current])
+    out.append(current)
 
-# print(-np.log(P[stoi["i"], stoi["r"]]))
-# print(-np.log(P[stoi["r"], stoi["s"]]))
-# print(-np.log(P[stoi["s"], stoi["t"]]))
+print("--- the model writes ---")
+print(decode(out))
 
-# print(1 / P[stoi["i"], stoi["r"]])
-# print(np.exp(2.8252734093025484))
-
+# 7. score the model: average of -log(chance it gave to what really came next)
 total = 0
 
-for i in range(len(data)-1):
-    total += -np.log(P[data[i], data[i+1]])
+for i in range(len(data) - 1):
+    total += -np.log(P[data[i], data[i + 1]])
 
-total = total / (len(data) - 1)
-print(total)
-print(-np.log(1 / 65))
+loss = total / (len(data) - 1)
+print("--- score ---")
+print(f"model {loss:.4f}, know-nothing {-np.log(1 / len(chars)):.4f}")
