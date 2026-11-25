@@ -29,13 +29,18 @@ def decode(msg):
 
     return decoded
 
-enc1 = encode("hello")
-print(enc1)
-dec1 = decode(enc1)
-print(dec1)
-print(decode(encode(text)) == text)
-
 data = np.array(encode(text))
-print(data.shape)
-print(data[:5])
-print(decode(data[:13]))
+# print(data.shape)
+# print(data[:5])
+# print(decode(data[:13]))
+
+N = np.zeros((len(char),len(char)),dtype=int)
+
+for i in range(len(data)-1):
+    N[data[i], data[i+1]] += 1
+
+sum_of_rows = N.sum(axis=1,keepdims=True)
+P = N / sum_of_rows
+# print(P[stoi["q"], stoi["u"]])
+# print(P[stoi["t"], stoi["h"]])
+# print(P.sum(axis=1)[:5])
